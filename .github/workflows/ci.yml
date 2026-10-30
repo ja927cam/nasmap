@@ -55,7 +55,7 @@ jobs:
         run: python -m app.migrate
       - name: Pytest
         working-directory: api
-        run: pytest -vv -s -x --timeout=30
+        run: timeout 180s pytest -vv -s -x
 
   web:
     name: Web lint, typecheck and build
