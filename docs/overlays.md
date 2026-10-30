@@ -17,7 +17,8 @@ a provider configuration in `layer.metadata`.
 
 The **Overlays** page also has one-click presets for OpenTopoMap, OpenSeaMap,
 Esri World Imagery, Sentinel-2 cloudless and NASA GIBS. Presets are ordinary
-layers; check each provider's terms before production use.
+layers; check each provider's terms before production use. Viewers can browse
+overlay presets and layers but only editors/admins can add them.
 
 The **Overlays** page adds XYZ, TileJSON and WMS sources immediately. GeoTIFF/
 COG URLs and Tessera use the same page but run background jobs. Vector overlays

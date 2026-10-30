@@ -30,8 +30,9 @@ TileServer GL and Caddy.
 - CRS detection and reprojection to EPSG:4326, invalid-geometry reporting and
   repair without silent data loss.
 - COG raster tiling through the API and WMS proxying.
-- Generic XYZ/TMS, TileJSON and WMS overlays, plus Tessera coverage, import,
-  caching and GeoTIFF export via the official `geotessera` package.
+- Generic XYZ/TMS, TileJSON, WMS and vector-tile overlays, with WMS
+  capabilities discovery, one-click presets, and Tessera coverage/import/export
+  via the official `geotessera` package.
 - Editable local OSM layers imported from Overpass (buildings, landuse, roads,
   waterways, natural features, amenities and boundaries) using the normal
   drawing and attribute editing tools.

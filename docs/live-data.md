@@ -28,7 +28,8 @@ Open-Meteo current conditions on a 3×3, 4×4 or 5×5 grid. Each point carries:
 - observation time
 
 Existing weather layers have a **Refresh** button. Refreshing replaces the points
-with a new observation from the same area.
+with a new observation from the same area. Manual edits to a live layer are
+replaced by the next refresh.
 
 - Attribution: Open-Meteo (CC BY 4.0)
 - Config: `OPEN_METEO_URL`, `LIVE_GRID_POINTS`

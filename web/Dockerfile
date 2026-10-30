@@ -4,6 +4,7 @@ COPY package.json package-lock.json* ./
 RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 COPY tsconfig.json vite.config.ts index.html eslint.config.js ./
 COPY src ./src
+COPY public ./public
 RUN npm run build
 
 FROM nginxinc/nginx-unprivileged:1.27-alpine
