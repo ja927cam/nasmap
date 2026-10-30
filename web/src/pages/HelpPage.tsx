@@ -83,6 +83,7 @@ export default function HelpPage() {
           <li><strong>Find a place</strong> — toolbar search flies to a place; the crosshair/geolocate control uses your browser location.</li>
           <li><strong>Layer filter</strong> — the box above the layer list narrows long layer lists by name.</li>
           <li><strong>Feature properties</strong> — edit the Fields view for normal tags; use JSON only for nested values. The table has its own row filter.</li>
+          <li><strong>Jobs</strong> — Dashboard → Recent imports → View all shows progress, retries and scheduled URL sources.</li>
         </ul>
       </section>
 

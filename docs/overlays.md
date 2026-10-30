@@ -52,8 +52,8 @@ scheme, bounds and attribution. Tile requests are then proxied like XYZ.
 
 ## WMS
 
-Provide the base GetMap endpoint, layer name(s), version and image format.
-Requests are proxied through
+Provide the base GetMap endpoint, then use **Load layers** to read the WMS
+capabilities and choose a layer name. Requests are proxied through
 `/api/v1/layers/{layer_id}/wms?bbox=...&width=256&height=256` with
 `EPSG:3857`. WMS servers must be reachable from the API container.
 

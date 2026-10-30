@@ -298,6 +298,8 @@ function AddOverlayForm({
   const [wmsVersion, setWmsVersion] = useState('1.3.0');
   const [wmsFormat, setWmsFormat] = useState('image/png');
   const [wmsTransparent, setWmsTransparent] = useState(true);
+  const [wmsOptions, setWmsOptions] = useState<{ name: string; title: string }[]>([]);
+  const [wmsLoading, setWmsLoading] = useState(false);
   const [attribution, setAttribution] = useState('');
   const [licence, setLicence] = useState('');
   const [visibility, setVisibility] = useState<'private' | 'organisation' | 'public'>('private');
@@ -427,7 +429,10 @@ function AddOverlayForm({
       >
         <input
           value={url}
-          onChange={(e) => setUrl(e.target.value)}
+          onChange={(e) => {
+            setUrl(e.target.value);
+            setWmsOptions([]);
+          }}
           placeholder={
             provider === 'xyz'
               ? 'https://tiles.example.org/{z}/{x}/{y}.png'
@@ -444,7 +449,47 @@ function AddOverlayForm({
       {provider === 'wms' && (
         <div className="grid-2">
           <Field label="WMS layers" hint="Comma-separated layer names.">
-            <input value={wmsLayers} onChange={(e) => setWmsLayers(e.target.value)} required />
+            <div className="input-action">
+              <input value={wmsLayers} onChange={(e) => setWmsLayers(e.target.value)} required />
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                disabled={!url || wmsLoading}
+                onClick={async () => {
+                  setWmsLoading(true);
+                  setError(null);
+                  try {
+                    const data = await api<{ version: string; layers: { name: string; title: string }[] }>(
+                      '/overlays/wms/capabilities',
+                      { method: 'POST', body: { url } },
+                    );
+                    setWmsOptions(data.layers);
+                    if (data.layers.length === 1) setWmsLayers(data.layers[0].name);
+                  } catch (err) {
+                    setError(err instanceof Error ? err.message : 'Could not load WMS capabilities');
+                  } finally {
+                    setWmsLoading(false);
+                  }
+                }}
+              >
+                {wmsLoading ? 'Loading…' : 'Load layers'}
+              </button>
+            </div>
+            {wmsOptions.length > 0 && (
+              <select
+                value=""
+                onChange={(e) => {
+                  if (e.target.value) setWmsLayers(e.target.value);
+                }}
+              >
+                <option value="">Choose from capabilities…</option>
+                {wmsOptions.map((option) => (
+                  <option key={option.name} value={option.name}>
+                    {option.title} ({option.name})
+                  </option>
+                ))}
+              </select>
+            )}
           </Field>
           <Field label="Version">
             <select value={wmsVersion} onChange={(e) => setWmsVersion(e.target.value)}>

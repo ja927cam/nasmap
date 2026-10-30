@@ -181,6 +181,13 @@ Limits: `INGEST_MAX_SCAN_FILES` for previews, `INGEST_MAX_FILES_PER_JOB` for a
 job, `MAX_PHOTO_MB` for photo parsing. Folder imports do not copy the source
 geodata file into the uploads volume.
 
+## Scheduled sources
+
+URL imports can set a refresh interval. Scheduled sources are listed on
+Dashboard → Recent imports → View all, where they can be enabled or disabled.
+The worker checks due sources every minute and replaces the previously imported
+features from that source when it refreshes.
+
 ## Overlays
 
 Raster services can be added without copying their pixels. See

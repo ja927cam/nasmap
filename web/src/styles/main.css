@@ -473,6 +473,12 @@ input[type='color'] {
   margin-top: 2px;
 }
 
+.input-action {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
 .inline-form {
   display: flex;
   gap: 8px;

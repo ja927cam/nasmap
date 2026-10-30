@@ -7,8 +7,25 @@ import { Badge, EmptyState, Progress, Spinner, formatDate } from '../components/
 
 const statuses = ['all', 'queued', 'running', 'succeeded', 'failed', 'cancelled'] as const;
 
+interface Source {
+  id: string;
+  kind: string;
+  url: string;
+  layer_id: string | null;
+  refresh_interval_seconds: number | null;
+  next_refresh_at: string | null;
+  enabled: boolean;
+}
+
+function formatInterval(seconds: number) {
+  if (seconds >= 86400) return `${Math.round(seconds / 86400)} day(s)`;
+  if (seconds >= 3600) return `${Math.round(seconds / 3600)} hour(s)`;
+  return `${Math.round(seconds / 60)} minute(s)`;
+}
+
 export default function JobsPage() {
   const [jobs, setJobs] = useState<ImportJob[]>([]);
+  const [sources, setSources] = useState<Source[]>([]);
   const [status, setStatus] = useState<(typeof statuses)[number]>('all');
   const [loading, setLoading] = useState(true);
   const [openJob, setOpenJob] = useState<string | null>(null);
@@ -17,8 +34,12 @@ export default function JobsPage() {
   const load = useCallback(async () => {
     try {
       const query = status === 'all' ? '' : `&status=${status}`;
-      const data = await api<Paged<ImportJob>>(`/imports?limit=100${query}`);
+      const [data, sourceData] = await Promise.all([
+        api<Paged<ImportJob>>(`/imports?limit=100${query}`),
+        api<Source[]>('/imports/sources'),
+      ]);
       setJobs(data.items);
+      setSources(sourceData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not load jobs');
     } finally {
@@ -111,6 +132,57 @@ export default function JobsPage() {
                   >
                     Retry
                   </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="panel">
+        <div className="panel-head">
+          <h2>Scheduled sources</h2>
+        </div>
+        {sources.length === 0 ? (
+          <p className="muted">
+            No scheduled sources. URL imports can set a refresh interval when they are created.
+          </p>
+        ) : (
+          <div className="list">
+            {sources.map((source) => (
+              <div key={source.id} className="list-row">
+                <div className="grow">
+                  <strong>{source.kind} source</strong>
+                  <small>
+                    {source.url} ·{' '}
+                    {source.refresh_interval_seconds
+                      ? `every ${formatInterval(source.refresh_interval_seconds)}`
+                      : 'no schedule'}
+                    {source.next_refresh_at ? ` · next ${formatDate(source.next_refresh_at)}` : ''}
+                  </small>
+                </div>
+                <label className="checkbox-row">
+                  <input
+                    type="checkbox"
+                    checked={source.enabled}
+                    onChange={async (e) => {
+                      try {
+                        await api(`/imports/sources/${source.id}`, {
+                          method: 'PATCH',
+                          body: { enabled: e.target.checked },
+                        });
+                        await load();
+                      } catch (err) {
+                        setError(err instanceof Error ? err.message : 'Could not update source');
+                      }
+                    }}
+                  />
+                  Enabled
+                </label>
+                {source.layer_id && (
+                  <Link className="btn btn-ghost btn-xs" to={`/map?layer=${source.layer_id}`}>
+                    Layer
+                  </Link>
                 )}
               </div>
             ))}

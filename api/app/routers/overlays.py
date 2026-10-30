@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import logging
 import tempfile
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Annotated, Any, Literal
 
@@ -22,6 +23,7 @@ from ..audit import audit
 from ..auth import EditorUser
 from ..database import get_db
 from ..models import Layer
+from ..rate_limit import auth_rate_limit
 from ..services import remote
 from .layers import serialize_layer
 
@@ -158,6 +160,10 @@ class XYZOverlayIn(OverlayBase):
 
 class TileJSONOverlayIn(OverlayBase):
     tilejson_url: str = Field(min_length=8, max_length=4000)
+
+
+class WMSCapabilitiesIn(BaseModel):
+    url: str = Field(min_length=8, max_length=4000)
 
 
 class WMSOverlayIn(OverlayBase):
@@ -320,6 +326,52 @@ async def create_tilejson(
         metadata,
     )
     return await _save(db, layer, request, user)
+
+
+@router.post("/wms/capabilities", dependencies=[Depends(auth_rate_limit)])
+async def wms_capabilities(
+    payload: WMSCapabilitiesIn,
+    user: EditorUser,
+):
+    request_url = payload.url
+    if "request=" not in request_url.lower():
+        separator = "&" if "?" in request_url else "?"
+        request_url = f"{request_url}{separator}service=WMS&request=GetCapabilities&version=1.3.0"
+    try:
+        remote.validate_url(request_url)
+    except remote.UnsafeURLError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    try:
+        with tempfile.TemporaryDirectory(prefix="nasmap-wms-") as tmp:
+            fetched = await remote.fetch_remote_to_file(request_url, Path(tmp), max_mb=10)
+            root = ET.fromstring(fetched.path.read_text(encoding="utf-8", errors="replace"))
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(
+            status_code=502, detail=f"Could not read WMS capabilities: {exc}"
+        ) from exc
+
+    def local(tag: str) -> str:
+        return tag.rsplit("}", 1)[-1]
+
+    version = root.attrib.get("version", "")
+    layers = []
+    for element in root.iter():
+        if local(element.tag) != "Layer":
+            continue
+        name = ""
+        title = ""
+        for child in element:
+            if local(child.tag) == "Name" and child.text:
+                name = child.text.strip()
+            elif local(child.tag) == "Title" and child.text:
+                title = child.text.strip()
+        if name:
+            layers.append({"name": name, "title": title or name})
+        if len(layers) >= 500:
+            break
+    if not layers:
+        raise HTTPException(status_code=422, detail="No named layers found in WMS capabilities")
+    return {"version": version, "layers": layers}
 
 
 @router.post("/wms", status_code=201)

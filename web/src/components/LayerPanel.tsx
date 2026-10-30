@@ -122,6 +122,12 @@ export default function LayerPanel(props: Props) {
                     <span>
                       {layer.geometry_type} · {layer.visibility} · {layer.source_type}
                     </span>
+                    {layer.metadata?.provider && (
+                      <span>
+                        Provider: {String(layer.metadata.provider)}
+                        {layer.metadata?.category ? ` · ${String(layer.metadata.category)}` : ''}
+                      </span>
+                    )}
                     {layer.licence && <span>Licence: {layer.licence}</span>}
                     {layer.attribution && <span>{layer.attribution}</span>}
                     {layer.metadata?.tessera && (
