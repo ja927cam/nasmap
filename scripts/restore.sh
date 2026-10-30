@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Restore a NasMap backup created by scripts/backup.sh.
+# Restore a Strata backup created by scripts/backup.sh.
 #   ./scripts/restore.sh backups/20260101T000000Z
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -14,7 +14,7 @@ DUMP="$SOURCE/database.dump"
 SOURCE_ABS="$(cd "$SOURCE" && pwd)"
 PREFIX="${COMPOSE_PROJECT_NAME:-nasmap}"
 
-echo "This will replace the current NasMap database and uploads."
+echo "This will replace the current Strata database and uploads."
 read -r -p "Type RESTORE to continue: " CONFIRM
 [[ "$CONFIRM" == "RESTORE" ]] || { echo "Aborted"; exit 1; }
 

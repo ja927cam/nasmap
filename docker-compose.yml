@@ -1,7 +1,7 @@
 name: nasmap
 
 x-api-env: &api-env
-  APP_NAME: ${APP_NAME:-NasMap}
+  APP_NAME: ${APP_NAME:-Strata}
   PUID: ${PUID:-1000}
   PGID: ${PGID:-1000}
   DEBUG: ${DEBUG:-false}
@@ -17,6 +17,7 @@ x-api-env: &api-env
   TILES_DIR: ${TILES_DIR:-/data/tiles}
   MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-512}
   MAX_PHOTO_MB: ${MAX_PHOTO_MB:-100}
+  MAX_ATTACHMENT_MB: ${MAX_ATTACHMENT_MB:-250}
   INGEST_ENABLED: ${INGEST_ENABLED:-true}
   INGEST_ROOTS: ${INGEST_ROOTS:-/ingest}
   INGEST_MAX_SCAN_FILES: ${INGEST_MAX_SCAN_FILES:-1000}
@@ -57,6 +58,11 @@ x-api-env: &api-env
   OVERPASS_TIMEOUT_SECONDS: ${OVERPASS_TIMEOUT_SECONDS:-90}
   OVERPASS_MAX_AREA_DEG2: ${OVERPASS_MAX_AREA_DEG2:-0.05}
   OVERPASS_MAX_MB: ${OVERPASS_MAX_MB:-64}
+  RAINVIEWER_ENABLED: ${RAINVIEWER_ENABLED:-true}
+  RAINVIEWER_METADATA_URL: ${RAINVIEWER_METADATA_URL:-https://api.rainviewer.com/public/weather-maps.json}
+  OPEN_METEO_URL: ${OPEN_METEO_URL:-https://api.open-meteo.com/v1/forecast}
+  USGS_EARTHQUAKES_URL: ${USGS_EARTHQUAKES_URL:-https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson}
+  LIVE_GRID_POINTS: ${LIVE_GRID_POINTS:-3}
   TESSERA_ENABLED: ${TESSERA_ENABLED:-true}
   TESSERA_VERSION: ${TESSERA_VERSION:-v1.1}
   TESSERA_VARIANT: ${TESSERA_VARIANT:-cambridge}

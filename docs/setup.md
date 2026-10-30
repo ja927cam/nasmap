@@ -11,8 +11,8 @@
 ## Fresh install
 
 ```bash
-git clone https://github.com/ja927cam/nasmap nasmap
-cd nasmap
+git clone https://github.com/ja927cam/strata strata
+cd strata
 cp .env.example .env
 ```
 
@@ -56,6 +56,7 @@ account (it becomes admin), and import a sample file.
 | `TILES_DIR` | `/data/tiles` | Local tile volume. |
 | `MAX_UPLOAD_MB` | 512 | Per-file upload cap. |
 | `MAX_PHOTO_MB` | 100 | Per-photo cap for EXIF imports. |
+| `MAX_ATTACHMENT_MB` | 250 | Per-file cap for non-image media. |
 | `MAX_URL_IMPORT_MB` | 1024 | Remote download cap. |
 | `URL_FETCH_TIMEOUT_SECONDS` | 90 | Per-request timeout. |
 | `ALLOW_PRIVATE_URL_IMPORTS` | false | Opt-in SSRF exception for LAN services. |
@@ -111,7 +112,7 @@ PGID=100
 ```
 
 The share must be readable by that user (or by “everyone”). The mount is
-read-only: NasMap never writes to the NAS folder.
+read-only: Strata never writes to the NAS folder.
 
 Multiple roots are possible with a Compose override that mounts each folder and
 lists them comma-separated, for example `INGEST_ROOTS=/ingest,/archive`, as long

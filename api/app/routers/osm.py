@@ -35,7 +35,7 @@ class AuthorizeIn(BaseModel):
 class PreviewIn(BaseModel):
     feature_id: UUID
     comment: str = Field(min_length=3, max_length=255)
-    source: str = Field(default="NasMap", max_length=255)
+    source: str = Field(default="Strata", max_length=255)
     tags: dict[str, str] | None = None
     changeset_tags: dict[str, str] = Field(default_factory=dict)
 

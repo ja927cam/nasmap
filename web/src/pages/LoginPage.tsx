@@ -16,7 +16,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(
     osmStatus === 'no_account'
-      ? 'No NasMap account is linked to that OpenStreetMap account. Sign in normally, then connect OSM in Settings.'
+      ? 'No Strata account is linked to that OpenStreetMap account. Sign in normally, then connect OSM in Settings.'
       : osmStatus === 'disabled'
         ? 'That account is disabled.'
         : osmStatus
@@ -49,7 +49,7 @@ export default function LoginPage() {
             <Icon name="layers" size={22} strokeWidth={2} />
           </span>
           <div>
-            <h1>NasMap</h1>
+            <h1>Strata</h1>
             <p>Self-hosted geospatial data</p>
           </div>
         </div>

@@ -1,6 +1,6 @@
 # Tessera / GeoTessera
 
-NasMap integrates the official
+Strata integrates the official
 [`geotessera`](https://github.com/ucam-eo/geotessera) Python package. The
 adapter lives in `api/app/services/tessera.py` and only calls documented
 GeoTessera APIs. No undocumented HTTP endpoints are assumed.
@@ -8,7 +8,7 @@ GeoTessera APIs. No undocumented HTTP endpoints are assumed.
 ## What it does
 
 Tessera provides 128-channel satellite embeddings on a 0.1° grid (about
-10 m pixels, 1,000 × 1,000 per tile). NasMap can:
+10 m pixels, 1,000 × 1,000 per tile). Strata can:
 
 - check coverage for a bounding box, year and variant before downloading;
 - preview the tile list on the map;

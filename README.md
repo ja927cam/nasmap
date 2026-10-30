@@ -1,6 +1,6 @@
-# NasMap
+# Strata
 
-**Self-hosted private maps for a NAS, home server or VPS.** NasMap serves
+**Self-hosted geospatial workspace for a NAS, home server or VPS.** Strata serves
 OpenStreetMap-based basemaps, lets you add and manage private vector and raster
 layers, import data from files and remote services, and optionally ingest
 TESSERA / GeoTessera satellite embeddings. It is a Docker Compose stack with a
@@ -23,7 +23,8 @@ TileServer GL and Caddy.
   remote file URLs. Long jobs run in a background worker.
 - Import batches of geotagged photos (JPEG, TIFF, PNG, WebP and Fujifilm RAF),
   read EXIF GPS/timestamps, attach the originals as permission-checked files and
-  optionally match photos to the nearest surveyed point.
+  optionally match photos to the nearest surveyed point. Any feature can also
+  carry PDF, video, audio or document attachments.
 - Bulk-process photos and geodata already on the NAS/server through a read-only
   `/ingest` mount, with a scan preview and background jobs.
 - CRS detection and reprojection to EPSG:4326, invalid-geometry reporting and
@@ -34,6 +35,8 @@ TileServer GL and Caddy.
 - Editable local OSM layers imported from Overpass (buildings, landuse, roads,
   waterways, natural features, amenities and boundaries) using the normal
   drawing and attribute editing tools.
+- Live layers for RainViewer weather radar, Open-Meteo weather points and USGS
+  earthquakes.
 - OSM OAuth 2.0 sign-in/linking and a preview/confirm/dry-run workflow that
   publishes a single point feature to a changeset.
 - MapLibre UI: layer panel, styling, attribute table, drawing, vertex editing,
@@ -47,8 +50,8 @@ Requirements: Docker Engine 24+ with Docker Compose v2, 4 GB RAM minimum
 (8 GB+ if you build local tiles or import Tessera data), and a few GB of disk.
 
 ```bash
-git clone https://github.com/ja927cam/nasmap nasmap
-cd nasmap
+git clone https://github.com/ja927cam/strata strata
+cd strata
 cp .env.example .env
 # Edit .env: at minimum set SECRET_KEY and POSTGRES_PASSWORD.
 # If you change POSTGRES_PASSWORD, update DATABASE_URL to match.
@@ -126,6 +129,7 @@ For production:
 - [docs/architecture.md](docs/architecture.md) — design and trade-offs.
 - [docs/data-import.md](docs/data-import.md) — supported formats and URL sources.
 - [docs/overlays.md](docs/overlays.md) — generic XYZ, TileJSON and WMS overlays.
+- [docs/live-data.md](docs/live-data.md) — live weather radar, weather points and earthquakes.
 - [docs/tessera.md](docs/tessera.md) — Tessera coverage, import and export.
 - [docs/osm.md](docs/osm.md) — basemaps, OSM PBF import, tiles and publishing.
 - [tiles/README.md](tiles/README.md) — TileServer GL layout and tile generation.

@@ -22,7 +22,7 @@ if [[ "${BACKUP_TESSERA:-true}" == "true" ]]; then
 fi
 
 cat > "$DEST/manifest.txt" <<MANIFEST
-NasMap backup
+Strata backup
 created_utc=$STAMP
 database=database.dump (pg_dump custom format)
 uploads=uploads.tar.gz

@@ -7,7 +7,7 @@ OSM_PBF ?= data/osm/$(REGION)-latest.osm.pbf
 .PHONY: help env up down restart logs ps migrate backup restore download-osm crop-osm import-osm generate-tiles update-osm test lint fmt shell db-shell api-shell build clean sample
 
 help:
-	@echo "NasMap targets:"
+	@echo "Strata targets:"
 	@echo "  make env              create .env from .env.example (if missing)"
 	@echo "  make up               build and start the stack"
 	@echo "  make down             stop the stack"

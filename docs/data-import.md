@@ -6,6 +6,9 @@
 | --- | --- | --- | --- |
 | GeoJSON | `.geojson`, `.json` | vector | FeatureCollection or single Feature |
 | GeoPackage | `.gpkg` | vector | All layers in the GPKG are read as one dataset |
+| FlatGeobuf | `.fgb` | vector | Read through GDAL/OGR |
+| GeoParquet | `.parquet` | vector | Read with GeoPandas/pyarrow |
+| GML / DXF | `.gml`, `.dxf` | vector | Read through GDAL/OGR when the driver is available |
 | Shapefile | `.zip` (containing `.shp`) | vector | Upload the ZIP, not loose `.shp` components |
 | KML / KMZ | `.kml`, `.kmz` | vector | KMZ is opened through GDAL `/vsizip/` |
 | GPX | `.gpx` | vector | Waypoints, tracks and routes as GDAL exposes them |
@@ -112,11 +115,11 @@ import.
   trusted LAN services (for example a WMS on `192.168.x.x`).
 
 DNS rebinding against attacker-controlled hosts remains a residual risk; run
-NasMap on a network where outbound access is appropriate.
+Strata on a network where outbound access is appropriate.
 
 ## Geotagged photos
 
-**Map → Add layer → Photos** accepts multiple JPEG/TIFF/PNG/WebP files. NasMap
+**Map → Add layer → Photos** accepts multiple JPEG/TIFF/PNG/WebP files. Strata
 reads each file's EXIF GPS tags and:
 
 - creates a point feature per geotagged photo in a new photo layer (or an
@@ -134,11 +137,14 @@ detected by SHA-256 checksum and skipped.
 
 The photo gallery appears in the feature panel. Clicking a point with an
 attachment shows the first photo immediately; additional photos are shown as
-thumbnails. For any editable feature, not only photo layers, **Add photo** in the
-feature panel attaches an image without requiring GPS. Thumbnails are generated
-on demand and cached in the uploads volume. Limits:
+thumbnails. For any editable feature, not only photo layers, **Add file** in the
+feature panel attaches an image without requiring GPS. The same control accepts
+PDF, text, CSV, video, audio and glTF files as generic attachments. Non-image
+files are listed with a Download action. Thumbnails are generated on demand and
+cached in the uploads volume. Limits:
 
 - `MAX_PHOTO_MB` (default 100 MB per photo);
+- `MAX_ATTACHMENT_MB` (default 250 MB for non-image media);
 - up to 100 photos per request;
 - Fujifilm RAF files are read through their embedded JPEG preview for EXIF GPS
   and thumbnails. A RAF without a preview/EXIF GPS is skipped and listed.
@@ -162,7 +168,7 @@ outside the configured roots is rejected.
 
 Photo mode reads EXIF GPS from every image and creates photo points/attachments.
 Original images stay in place (read-only reference); thumbnails are cached in
-NasMap’s uploads volume. Geodata mode imports each GeoJSON/GPKG/Shapefile ZIP/
+Strata’s uploads volume. Geodata mode imports each GeoJSON/GPKG/Shapefile ZIP/
 KML/KMZ/GPX/CSV/GeoTIFF/COG as its own child import job and layer, reported in
 the parent job.
 

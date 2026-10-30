@@ -44,6 +44,10 @@ VECTOR_EXTENSIONS = {
     ".kmz": "kmz",
     ".gpx": "gpx",
     ".csv": "csv",
+    ".fgb": "flatgeobuf",
+    ".gml": "gml",
+    ".dxf": "dxf",
+    ".parquet": "parquet",
 }
 RASTER_EXTENSIONS = {".tif": "cog", ".tiff": "cog"}
 EXPORT_MEDIA_TYPES = {
@@ -184,6 +188,16 @@ def read_vector(path: Path) -> gpd.GeoDataFrame:
     suffix = path.suffix.lower()
     if suffix == ".csv":
         return _read_csv(path)
+    if suffix == ".parquet":
+        try:
+            frame = gpd.read_parquet(path)
+        except Exception as exc:  # noqa: BLE001
+            raise ValueError(f"Could not read GeoParquet: {exc}") from exc
+        if frame.crs is None:
+            frame = frame.set_crs("EPSG:4326", allow_override=True)
+        else:
+            frame = frame.to_crs("EPSG:4326")
+        return frame
     source = _resolve_archive(path)
     try:
         frame = gpd.read_file(source)

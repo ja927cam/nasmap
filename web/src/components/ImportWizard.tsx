@@ -184,13 +184,13 @@ export default function ImportWizard({
       {tab === 'upload' && (
         <div className="stack">
           <p className="muted">
-            GeoJSON, GeoPackage, Shapefile ZIP, KML/KMZ, GPX, CSV (lat/lon, WKT or GeoJSON) and
-            GeoTIFF/COG up to {config.max_upload_mb} MB.
+            GeoJSON, GeoPackage, Shapefile ZIP, KML/KMZ, GPX, CSV, FlatGeobuf, GML, DXF,
+            GeoParquet and GeoTIFF/COG up to {config.max_upload_mb} MB.
           </p>
           <label className="file-drop">
             <input
               type="file"
-              accept=".geojson,.json,.gpkg,.zip,.shp,.kml,.kmz,.gpx,.csv,.tif,.tiff"
+              accept=".geojson,.json,.gpkg,.zip,.shp,.kml,.kmz,.gpx,.csv,.fgb,.gml,.dxf,.parquet,.tif,.tiff"
               onChange={(e) => {
                 const selected = e.target.files?.[0] ?? null;
                 setFile(selected);
@@ -204,7 +204,7 @@ export default function ImportWizard({
             <Field label="Layer name">
               <input value={name} onChange={(e) => setName(e.target.value)} />
             </Field>
-            <Field label="Append to existing layer" hint="Leave empty to create a new layer.">
+            <Field label="Append to existing layer" hint="Leave empty to create a new layer." help="Appending adds the file’s features to an existing vector layer. Geometry type must be compatible.">
               <select value={appendTo} onChange={(e) => setAppendTo(e.target.value)}>
                 <option value="">Create new layer</option>
                 {vectorLayers.map((layer) => (
@@ -249,7 +249,7 @@ export default function ImportWizard({
             Remote files and OGC/ArcGIS/STAC services. Private and link-local addresses are
             blocked; downloads are capped at {config.max_url_import_mb} MB.
           </p>
-          <Field label="URL">
+          <Field label="URL" help="Use the direct data or service URL. WMS needs layer names; WFS can often discover its feature type.">
             <input
               value={url}
               onChange={(e) => setUrl(e.target.value)}
@@ -257,7 +257,7 @@ export default function ImportWizard({
             />
           </Field>
           <div className="grid-2">
-            <Field label="Type">
+            <Field label="Type" help="Auto-detect uses the URL, response headers and extension. Choose a type manually if detection is ambiguous.">
               <select value={kind} onChange={(e) => setKind(e.target.value)}>
                 <option value="auto">Auto-detect</option>
                 <option value="geojson">GeoJSON</option>
@@ -290,7 +290,7 @@ export default function ImportWizard({
                 ))}
               </select>
             </Field>
-            <Field label="Refresh interval (days)" hint="Optional scheduled refresh for compatible URLs.">
+            <Field label="Refresh interval (days)" hint="Optional scheduled refresh for compatible URLs." help="Strata re-downloads the source on this schedule and replaces features that came from that source.">
               <input
                 type="number"
                 min={0}

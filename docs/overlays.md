@@ -1,7 +1,7 @@
 # Overlays
 
 An overlay is a layer you put on top of your own data without importing or
-copying the source pixels. NasMap treats overlays as a normal raster layer with
+copying the source pixels. Strata treats overlays as a normal raster layer with
 a provider configuration in `layer.metadata`.
 
 ## Providers
@@ -42,7 +42,7 @@ subdomain token is substituted with `a`.
 
 ## TileJSON
 
-Provide the TileJSON URL. NasMap validates the URL, fetches the document
+Provide the TileJSON URL. Strata validates the URL, fetches the document
 server-side, and stores the first `tiles` URL plus tile size, zoom limits,
 scheme, bounds and attribution. Tile requests are then proxied like XYZ.
 

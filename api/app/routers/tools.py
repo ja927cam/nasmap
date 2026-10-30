@@ -21,7 +21,7 @@ async def geocode(user: CurrentUser, q: str = Query(min_length=2, max_length=200
             response = await client.get(
                 f"{settings.nominatim_url.rstrip('/')}/search",
                 params={"q": q, "format": "jsonv2", "limit": 5, "addressdetails": 0},
-                headers={"User-Agent": "NasMap/1.0 (self-hosted geospatial app)"},
+                headers={"User-Agent": "Strata/1.0 (self-hosted geospatial app)"},
             )
     except httpx.HTTPError as exc:
         raise HTTPException(

@@ -184,7 +184,7 @@ export default function SettingsPage() {
         ) : (
           <div className="stack">
             <p className="muted">
-              Connect your OSM account to preview and publish selected features. NasMap only
+              Connect your OSM account to preview and publish selected features. Strata only
               requests {osm?.scopes.join(' and ') || 'read_prefs and write_api'}.
             </p>
             <button className="btn btn-secondary" onClick={connectOsm}>

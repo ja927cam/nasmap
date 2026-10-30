@@ -195,15 +195,15 @@ def clean_tags(properties: dict[str, Any]) -> dict[str, str]:
 
 def changeset_xml(comment: str, source: str, extra_tags: dict[str, str] | None = None) -> str:
     tags = {
-        "created_by": "NasMap",
+        "created_by": "Strata",
         "comment": comment,
-        "source": source or "NasMap",
+        "source": source or "Strata",
         **(extra_tags or {}),
     }
     tag_xml = "".join(
         f"<tag k={quoteattr(k)} v={quoteattr(str(v))}/>" for k, v in tags.items() if str(v).strip()
     )
-    return f'<osm version="0.6" generator="NasMap"><changeset>{tag_xml}</changeset></osm>'
+    return f'<osm version="0.6" generator="Strata"><changeset>{tag_xml}</changeset></osm>'
 
 
 def osm_change_xml(
@@ -228,9 +228,9 @@ def osm_change_xml(
             f'<node id="{int(osm_id)}"{version_attr}{changeset_attr} lat="{lat:.7f}" '
             f'lon="{lon:.7f}">{tag_xml}</node>'
         )
-        return f'<osmChange version="0.6" generator="NasMap"><modify>{node}</modify></osmChange>'
+        return f'<osmChange version="0.6" generator="Strata"><modify>{node}</modify></osmChange>'
     node = f'<node id="-1"{changeset_attr} lat="{lat:.7f}" lon="{lon:.7f}">{tag_xml}</node>'
-    return f'<osmChange version="0.6" generator="NasMap"><create>{node}</create></osmChange>'
+    return f'<osmChange version="0.6" generator="Strata"><create>{node}</create></osmChange>'
 
 
 async def fetch_node_version(access_token: str, osm_id: int) -> dict[str, Any] | None:

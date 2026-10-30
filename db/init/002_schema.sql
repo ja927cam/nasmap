@@ -1,4 +1,4 @@
--- NasMap core schema. This file is idempotent so it can be applied both by the
+-- Strata core schema. This file is idempotent so it can be applied both by the
 -- Postgres entrypoint and by `python -m app.migrate`.
 
 CREATE TABLE IF NOT EXISTS app.schema_migrations (

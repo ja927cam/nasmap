@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "nasmap-api"
 version = "1.0.0"
-description = "NasMap API - self-hosted private geospatial layers"
+description = "Strata API - self-hosted private geospatial layers"
 requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.115,<1",
@@ -32,6 +32,7 @@ dependencies = [
   "rio-tiler>=7.0,<8",
   "numpy>=1.26,<3",
   "pandas>=2.2,<3",
+  "pyarrow>=17,<22",
   "Pillow>=10,<14",
   "rawpy>=0.21,<1",
 ]

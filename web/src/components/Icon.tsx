@@ -25,7 +25,11 @@ export type IconName =
   | 'user'
   | 'logout'
   | 'check'
-  | 'table';
+  | 'table'
+  | 'help'
+  | 'weather'
+  | 'activity'
+  | 'file';
 
 const paths: Record<IconName, JSX.Element> = {
   dashboard: (
@@ -136,6 +140,26 @@ const paths: Record<IconName, JSX.Element> = {
     <>
       <rect x="3" y="4" width="18" height="16" rx="1.5" />
       <path d="M3 9h18M9 9v11" />
+    </>
+  ),
+  help: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.5 9a2.5 2.5 0 1 1 3.4 2.35c-.9.37-1.4 1.05-1.4 2.05" />
+      <path d="M12 17h.01" />
+    </>
+  ),
+  weather: (
+    <>
+      <path d="M7 18h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 11a3.5 3.5 0 0 0 1 7Z" />
+      <path d="M8 21v-2M12 21v-2M16 21v-2" />
+    </>
+  ),
+  activity: <path d="M3 12h4l2-7 4 14 2-7h6" />,
+  file: (
+    <>
+      <path d="M6 3h8l4 4v14H6V3Z" />
+      <path d="M14 3v5h5" />
     </>
   ),
 };

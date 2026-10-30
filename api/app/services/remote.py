@@ -154,7 +154,7 @@ async def fetch_remote_to_file(
     async with httpx.AsyncClient(
         follow_redirects=False,
         timeout=httpx.Timeout(timeout_seconds, connect=15),
-        headers={"User-Agent": "NasMap/1.0 (+self-hosted geospatial importer)"},
+        headers={"User-Agent": "Strata/1.0 (+self-hosted geospatial importer)"},
     ) as client:
         for _hop in range(6):
             async with client.stream("GET", current) as response:

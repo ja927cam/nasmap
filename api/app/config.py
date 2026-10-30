@@ -18,7 +18,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    app_name: str = "NasMap"
+    app_name: str = "Strata"
     env: str = "production"
     debug: bool = False
     log_level: str = "INFO"
@@ -40,6 +40,7 @@ class Settings(BaseSettings):
 
     max_upload_mb: int = 512
     max_photo_mb: int = 100
+    max_attachment_mb: int = 250
 
     ingest_enabled: bool = True
     ingest_roots: str = "/ingest"
@@ -88,6 +89,14 @@ class Settings(BaseSettings):
     overpass_timeout_seconds: int = 90
     overpass_max_area_deg2: float = 0.05
     overpass_max_mb: int = 64
+
+    rainviewer_enabled: bool = True
+    rainviewer_metadata_url: str = "https://api.rainviewer.com/public/weather-maps.json"
+    open_meteo_url: str = "https://api.open-meteo.com/v1/forecast"
+    usgs_earthquakes_url: str = (
+        "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson"
+    )
+    live_grid_points: int = 3
 
     tessera_enabled: bool = True
     tessera_version: str = "v1.1"

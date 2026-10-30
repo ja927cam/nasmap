@@ -1,6 +1,6 @@
 """Fetch OSM elements from Overpass and turn them into app features.
 
-The result is a normal editable NasMap layer. It is a local copy: edits are not
+The result is a normal editable Strata layer. It is a local copy: edits are not
 written back to OpenStreetMap.
 """
 
@@ -69,7 +69,7 @@ async def fetch_elements(bbox: tuple[float, float, float, float], category: str)
         async with httpx.AsyncClient(
             timeout=httpx.Timeout(settings.overpass_timeout_seconds + 15),
             follow_redirects=False,
-            headers={"User-Agent": "NasMap/1.0 (self-hosted OSM data import)"},
+            headers={"User-Agent": "Strata/1.0 (self-hosted OSM data import)"},
         ) as client:
             response = await client.post(settings.overpass_url, data={"data": query})
     except httpx.HTTPError as exc:

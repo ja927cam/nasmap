@@ -56,18 +56,36 @@ export function ErrorBox({ message }: { message: string | null | undefined }) {
   return <div className="error-box">{message}</div>;
 }
 
+export function HelpTip({ text }: { text: string }) {
+  return (
+    <span className="help-tip">
+      <button type="button" aria-label={`Help: ${text}`}>
+        ?
+      </button>
+      <span className="help-tip-content" role="tooltip">
+        {text}
+      </span>
+    </span>
+  );
+}
+
 export function Field({
   label,
   hint,
+  help,
   children,
 }: {
   label: string;
   hint?: string;
+  help?: string;
   children: ReactNode;
 }) {
   return (
     <label className="field">
-      <span>{label}</span>
+      <span className="field-label">
+        {label}
+        {help && <HelpTip text={help} />}
+      </span>
       {children}
       {hint && <small>{hint}</small>}
     </label>

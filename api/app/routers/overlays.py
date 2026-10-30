@@ -44,7 +44,7 @@ PROVIDERS = [
     {
         "id": "wms",
         "label": "WMS",
-        "description": "OGC Web Map Service layer, proxied through NasMap.",
+        "description": "OGC Web Map Service layer, proxied through Strata.",
         "kind": "raster",
     },
     {

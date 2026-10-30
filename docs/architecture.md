@@ -1,6 +1,6 @@
 # Architecture
 
-NasMap is a single-host, Docker Compose application. The design goal is to keep
+Strata is a single-host, Docker Compose application. The design goal is to keep
 the number of moving parts small enough for a NAS while still separating the
 request path from long-running geospatial processing.
 
@@ -102,7 +102,7 @@ Global roles are `admin`, `editor`, `viewer`. Layer access is additive:
 - a row in `app.layer_permissions` grants `editor` or `viewer`;
 - `public` layers are readable by any authenticated user;
 - `organisation` is treated as "any authenticated user on this instance" because
-  NasMap is deliberately single-tenant. This is documented rather than
+  Strata is deliberately single-tenant. This is documented rather than
   pretending to support multi-organisation isolation.
 
 Reads require any layer role; writes additionally require a global
@@ -139,6 +139,14 @@ attachments, and reuses the existing child import pipeline for geodata files.
 Source geodata files are not copied; photo originals are referenced in place,
 with thumbnails cached in the uploads volume. Too many files or unreadable
 entries produce explicit job errors rather than partial silent scans.
+
+### Live data
+
+Live feeds are adapters that return normal records/layers: RainViewer radar is a
+dynamic raster proxy; Open-Meteo and USGS are point-vector snapshots refreshed
+on demand. Provider URLs are configuration, not user input, and still pass the
+SSRF validator. Cached radar frames are keyed by frame path so a new frame does
+not serve stale tiles.
 
 ### SSRF model
 

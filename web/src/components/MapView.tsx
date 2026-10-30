@@ -31,7 +31,7 @@ type LngLat = [number, number];
 function remoteStyle(osmTileUrl: string, attribution: string): any {
   return {
     version: 8,
-    name: 'NasMap remote OSM',
+    name: 'Strata remote OSM',
     sources: {
       osm: {
         type: 'raster',

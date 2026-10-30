@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import logging
 import time
 from pathlib import Path
@@ -17,7 +18,7 @@ from ..auth import CurrentUser
 from ..config import settings
 from ..database import get_db
 from ..permissions import get_layer_or_404, require_read
-from ..services import raster, remote
+from ..services import live, raster, remote
 
 router = APIRouter(tags=["raster"])
 logger = logging.getLogger("nasmap.tiles")
@@ -36,8 +37,24 @@ def raster_source(layer) -> str:
 
 async def _remote_overlay_tile(layer, z: int, x: int, y: int) -> tuple[bytes, str, str]:
     metadata = layer.metadata_ or {}
-    xyz = metadata.get("xyz") or {}
+    xyz = dict(metadata.get("xyz") or {})
     template = xyz.get("url")
+    cache_variant = ""
+    rain = metadata.get("rainviewer")
+    if rain:
+        if not settings.rainviewer_enabled:
+            raise HTTPException(status_code=503, detail="RainViewer is disabled")
+        try:
+            host, path = await live.rainviewer_frame()
+        except live.LiveDataError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+        template = live.rainviewer_template(
+            host,
+            path,
+            int(rain.get("color") or 4),
+            str(rain.get("options") or "1_1"),
+        )
+        cache_variant = hashlib.sha1(template.encode()).hexdigest()[:10]
     if not template:
         raise HTTPException(status_code=422, detail="Overlay has no XYZ tile URL")
     minzoom = int(xyz.get("minzoom") or 0)
@@ -58,7 +75,8 @@ async def _remote_overlay_tile(layer, z: int, x: int, y: int) -> tuple[bytes, st
     except remote.UnsafeURLError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
-    cache_path = settings.tiles_dir / "overlays" / str(layer.id) / str(z) / str(x) / f"{y}.png"
+    filename = f"{y}-{cache_variant}.png" if cache_variant else f"{y}.png"
+    cache_path = settings.tiles_dir / "overlays" / str(layer.id) / str(z) / str(x) / filename
     ttl_seconds = max(1, settings.overlay_tile_cache_ttl_hours) * 3600
     try:
         if cache_path.exists() and (time.time() - cache_path.stat().st_mtime) < ttl_seconds:
@@ -70,7 +88,7 @@ async def _remote_overlay_tile(layer, z: int, x: int, y: int) -> tuple[bytes, st
         async with httpx.AsyncClient(
             timeout=30,
             follow_redirects=False,
-            headers={"User-Agent": "NasMap/1.0 (self-hosted raster overlay proxy)"},
+            headers={"User-Agent": "Strata/1.0 (self-hosted raster overlay proxy)"},
         ) as client:
             upstream = await client.get(url)
     except httpx.HTTPError as exc:
@@ -247,7 +265,7 @@ async def remote_basemap_tile(z: int, x: int, y: int):
             timeout=20,
             follow_redirects=False,
             headers={
-                "User-Agent": "NasMap/1.0 (self-hosted OpenStreetMap basemap; on-demand cache)"
+                "User-Agent": "Strata/1.0 (self-hosted OpenStreetMap basemap; on-demand cache)"
             },
         ) as client:
             upstream = await client.get(url)

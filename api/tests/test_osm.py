@@ -23,7 +23,7 @@ def test_non_http_scheme_blocked():
 
 
 def test_changeset_xml_escapes_values():
-    xml = osm.changeset_xml('Survey "A" & B', "NasMap", {"locale": "en"})
+    xml = osm.changeset_xml('Survey "A" & B', "Strata", {"locale": "en"})
     assert "comment" in xml
     assert "&amp;" in xml
     assert "Survey" in xml

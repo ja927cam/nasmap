@@ -61,7 +61,7 @@ export default function PhotoImportForm({
   return (
     <div className="stack">
       <p className="muted">
-        Select JPEG, TIFF, PNG, WebP or Fujifilm RAF files from your phone or camera. NasMap reads
+        Select JPEG, TIFF, PNG, WebP or Fujifilm RAF files from your phone or camera. Strata reads
         the EXIF GPS position, stores the original as an attachment and creates a point feature for
         each geotagged photo. Photos without GPS are listed and skipped rather than placed at 0,0.
         Per-photo limit: {config?.max_photo_mb ?? 100} MB.
@@ -93,7 +93,7 @@ export default function PhotoImportForm({
       )}
 
       <div className="grid-2">
-        <Field label="Add to existing layer" hint="Only point or mixed-geometry layers.">
+        <Field label="Add to existing layer" hint="Only point or mixed-geometry layers." help="Leave empty to create a photo layer. Appending adds one point per geotagged photo.">
           <select
             value={layerId}
             onChange={(e) => {
@@ -143,7 +143,7 @@ export default function PhotoImportForm({
             </span>
           </label>
           {matchExisting && (
-            <Field label="Matching radius (metres)">
+            <Field label="Matching radius (metres)" help="A photo is attached to the nearest existing point within this distance instead of creating a new point.">
               <input
                 type="number"
                 min={1}

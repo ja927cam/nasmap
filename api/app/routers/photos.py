@@ -23,7 +23,7 @@ from ..database import get_db
 from ..models import Attachment, Feature, Layer
 from ..permissions import get_layer_or_404, require_read, require_write
 from ..rate_limit import upload_rate_limit
-from ..services import photo_ingest, photos
+from ..services import media, photo_ingest, photos
 
 router = APIRouter(tags=["photos"])
 logger = logging.getLogger("nasmap.photos")
@@ -39,9 +39,11 @@ def sanitize_filename(name: str) -> str:
     return base[:180]
 
 
-async def save_photo(upload: UploadFile, destination: Path) -> tuple[int, str]:
+async def save_photo(
+    upload: UploadFile, destination: Path, max_mb: int | None = None
+) -> tuple[int, str]:
     destination.parent.mkdir(parents=True, exist_ok=True)
-    max_bytes = settings.max_photo_mb * 1024 * 1024
+    max_bytes = (max_mb or settings.max_photo_mb) * 1024 * 1024
     size = 0
     hasher = hashlib.sha256()
     with destination.open("wb") as handle:
@@ -297,28 +299,42 @@ async def add_feature_attachments(
                 skipped.append({"filename": "unnamed", "reason": "Missing filename"})
                 continue
             filename = sanitize_filename(upload.filename)
-            if not photos.is_photo(filename):
+            is_image = photos.is_photo(filename)
+            is_media = media.is_media(filename)
+            if not is_image and not is_media:
                 skipped.append(
                     {
                         "filename": filename,
-                        "reason": "Unsupported image type (JPEG, TIFF, PNG, WebP or RAF)",
+                        "reason": "Unsupported attachment type",
                     }
                 )
                 continue
             destination = import_dir / uuid.uuid4().hex / filename
             try:
-                await save_photo(upload, destination)
-                metadata = photos.inspect_photo(destination)
+                if is_image:
+                    await save_photo(upload, destination, settings.max_photo_mb)
+                    parsed = photos.inspect_photo(destination)
+                    content_type = parsed.content_type
+                    size_bytes = parsed.size_bytes
+                    checksum = parsed.checksum
+                    stored_name = parsed.filename
+                else:
+                    await save_photo(upload, destination, settings.max_attachment_mb)
+                    parsed = media.inspect_media(destination)
+                    content_type = parsed["content_type"]
+                    size_bytes = parsed["size_bytes"]
+                    checksum = parsed["checksum"]
+                    stored_name = parsed["filename"]
             except HTTPException:
                 raise
             except Exception as exc:  # noqa: BLE001
                 destination.unlink(missing_ok=True)
-                skipped.append({"filename": filename, "reason": f"Could not read image: {exc}"})
+                skipped.append({"filename": filename, "reason": f"Could not read file: {exc}"})
                 continue
             duplicate = await db.scalar(
                 select(Attachment.id).where(
                     Attachment.feature_id == feature.id,
-                    Attachment.checksum == metadata.checksum,
+                    Attachment.checksum == checksum,
                 )
             )
             if duplicate:
@@ -328,11 +344,11 @@ async def add_feature_attachments(
             attachment = Attachment(
                 layer_id=layer.id,
                 feature_id=feature.id,
-                filename=metadata.filename,
-                content_type=metadata.content_type,
-                size_bytes=metadata.size_bytes,
-                storage_path=str(metadata.storage_path),
-                checksum=metadata.checksum,
+                filename=stored_name,
+                content_type=content_type,
+                size_bytes=size_bytes,
+                storage_path=str(destination),
+                checksum=checksum,
                 created_by=user.id,
             )
             db.add(attachment)

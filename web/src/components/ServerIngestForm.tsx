@@ -142,7 +142,7 @@ export default function ServerIngestForm({
       </p>
 
       <div className="grid-2">
-        <Field label="Configured root">
+        <Field label="Configured root" help="Only folders under INGEST_ROOTS are visible. The source mount is read-only.">
           <select
             value={root}
             onChange={(e) => {
@@ -157,7 +157,7 @@ export default function ServerIngestForm({
             ))}
           </select>
         </Field>
-        <Field label="Subfolder" hint="Relative to the selected root; leave empty for the whole root.">
+        <Field label="Subfolder" hint="Relative to the selected root; leave empty for the whole root." help="Example: 2026/spring. Hidden folders and NAS metadata folders are skipped.">
           <input
             value={folder}
             onChange={(e) => {
@@ -170,7 +170,7 @@ export default function ServerIngestForm({
       </div>
 
       <div className="grid-2">
-        <Field label="Import type">
+        <Field label="Import type" help="Photos require EXIF GPS. Geodata creates one child import job and layer per supported file.">
           <select
             value={mode}
             onChange={(e) => {
@@ -182,7 +182,7 @@ export default function ServerIngestForm({
             <option value="geodata">Geodata files</option>
           </select>
         </Field>
-        <Field label="Recursive">
+        <Field label="Recursive" help="Include files in subfolders. Turn off to process only the selected folder.">
           <select
             value={recursive ? 'yes' : 'no'}
             onChange={(e) => {
@@ -313,7 +313,7 @@ export default function ServerIngestForm({
 
       <p className="hint">
         Photo attachments reference the original NAS files. Keep the mounted folder in place for
-        images to remain accessible; thumbnails are cached in NasMap storage.
+        images to remain accessible; thumbnails are cached in Strata storage.
       </p>
     </div>
   );

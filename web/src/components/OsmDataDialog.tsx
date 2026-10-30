@@ -89,7 +89,7 @@ export default function OsmDataDialog({
     <Modal title="Import OSM data" onClose={onClose} wide>
       <form className="stack" onSubmit={submit}>
         <div className="warning-box">
-          Imports a local, editable copy of OpenStreetMap data. Changes stay in NasMap and are
+          Imports a local, editable copy of OpenStreetMap data. Changes stay in Strata and are
           not uploaded back to OSM automatically.
         </div>
 
@@ -100,7 +100,7 @@ export default function OsmDataDialog({
         ) : (
           <div className="osm-area-layout">
             <div className="stack">
-              <Field label="OSM data">
+              <Field label="OSM data" help="Buildings and landuse are polygons, roads are lines, nodes are points. OSM tags and IDs are kept.">
                 <select
                   value={category}
                   onChange={(e) => {
@@ -118,7 +118,7 @@ export default function OsmDataDialog({
               <Field label="Layer name">
                 <input value={name} onChange={(e) => setName(e.target.value)} required />
               </Field>
-              <Field label="Append to existing layer" hint="Leave empty to create a new editable OSM layer.">
+              <Field label="Append to existing layer" hint="Leave empty to create a new editable OSM layer." help="The existing layer must accept the geometry types returned by this import.">
                 <select value={layerId} onChange={(e) => setLayerId(e.target.value)}>
                   <option value="">Create a new layer</option>
                   {vectorLayers.map((layer) => (

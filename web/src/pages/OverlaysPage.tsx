@@ -343,6 +343,15 @@ function AddOverlayForm({
                 ? 'GeoTIFF / COG URL'
                 : 'Tile URL template'
         }
+        help={
+          provider === 'wms'
+            ? 'WMS requests are proxied through Strata with EPSG:3857 tiles.'
+            : provider === 'tilejson'
+              ? 'TileJSON is fetched server-side; its first raster tile URL is used.'
+              : provider === 'cog'
+                ? 'The raster is downloaded and converted to a COG in the background.'
+                : 'The URL must contain {z}, {x} and {y}. {s} is replaced with the subdomain a.'
+        }
         hint={
           provider === 'xyz'
             ? 'Example: https://tiles.example.org/{z}/{x}/{y}.png'

@@ -1,4 +1,4 @@
-"""NasMap FastAPI application."""
+"""Strata FastAPI application."""
 
 from __future__ import annotations
 
@@ -27,6 +27,7 @@ from .routers import (
     imports,
     ingest,
     layers,
+    live,
     osm,
     osm_data,
     overlays,
@@ -54,14 +55,14 @@ async def lifespan(app: FastAPI):
     settings.upload_dir.mkdir(parents=True, exist_ok=True)
     settings.tessera_cache_dir.mkdir(parents=True, exist_ok=True)
     settings.tiles_dir.mkdir(parents=True, exist_ok=True)
-    logger.info("NasMap API starting (env=%s)", settings.env)
+    logger.info("Strata API starting (env=%s)", settings.env)
     yield
     await engine.dispose()
-    logger.info("NasMap API stopped")
+    logger.info("Strata API stopped")
 
 
 app = FastAPI(
-    title="NasMap API",
+    title="Strata API",
     version=__version__,
     description=(
         "Self-hosted private geospatial layers, OSM basemaps, remote data imports "
@@ -200,6 +201,7 @@ async def public_config():
         "tessera_enabled": settings.tessera_enabled,
         "max_upload_mb": settings.max_upload_mb,
         "max_photo_mb": settings.max_photo_mb,
+        "max_attachment_mb": settings.max_attachment_mb,
         "max_url_import_mb": settings.max_url_import_mb,
     }
 
@@ -233,6 +235,7 @@ app.include_router(photos.router, prefix="/api/v1")
 app.include_router(ingest.router, prefix="/api/v1")
 app.include_router(overlays.router, prefix="/api/v1")
 app.include_router(osm_data.router, prefix="/api/v1")
+app.include_router(live.router, prefix="/api/v1")
 app.include_router(imports.router, prefix="/api/v1")
 app.include_router(tessera.router, prefix="/api/v1")
 app.include_router(osm.router, prefix="/api/v1")

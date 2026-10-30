@@ -50,8 +50,8 @@ export default function OsmPublishDialog({
   }, [feature]);
 
   const [tags, setTags] = useState<Record<string, string>>(initialTags);
-  const [comment, setComment] = useState(`NasMap: update ${layer.name}`);
-  const [source, setSource] = useState('NasMap survey');
+  const [comment, setComment] = useState(`Strata: update ${layer.name}`);
+  const [source, setSource] = useState('Strata survey');
   const [preview, setPreview] = useState<Preview | null>(null);
   const [result, setResult] = useState<PublishResult | null>(null);
   const [confirmed, setConfirmed] = useState(false);

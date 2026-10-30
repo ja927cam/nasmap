@@ -5,7 +5,9 @@ import Icon, { type IconName } from './Icon';
 const navItems: { to: string; label: string; end?: boolean; icon: IconName }[] = [
   { to: '/', label: 'Dashboard', end: true, icon: 'dashboard' },
   { to: '/map', label: 'Map', icon: 'map' },
+  { to: '/live', label: 'Live', icon: 'weather' },
   { to: '/overlays', label: 'Overlays', icon: 'layers' },
+  { to: '/help', label: 'Help', icon: 'help' },
   { to: '/settings', label: 'Settings', icon: 'settings' },
 ];
 
@@ -19,7 +21,7 @@ export default function Layout() {
           <span className="brand-mark">
             <Icon name="layers" size={15} strokeWidth={2} />
           </span>
-          <span>NasMap</span>
+          <span>Strata</span>
         </NavLink>
         <nav>
           {navItems.map((item) => (

@@ -99,6 +99,7 @@ export interface PublicConfig {
   tessera_enabled: boolean;
   max_upload_mb: number;
   max_photo_mb: number;
+  max_attachment_mb: number;
   max_url_import_mb: number;
 }
 

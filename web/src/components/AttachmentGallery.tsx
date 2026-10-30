@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, authedBlob } from '../api/client';
 import type { Attachment } from '../api/types';
+import Icon from './Icon';
 import { Modal, formatBytes } from './ui';
 
 const ACCEPT =
   'image/jpeg,image/tiff,image/png,image/webp,image/x-fujifilm-raf,' +
-  '.jpg,.JPG,.jpeg,.JPEG,.jfif,.JFIF,.tif,.TIF,.tiff,.TIFF,.png,.PNG,.webp,.WEBP,.raf,.RAF';
+  '.jpg,.JPG,.jpeg,.JPEG,.jfif,.JFIF,.tif,.TIF,.tiff,.TIFF,.png,.PNG,.webp,.WEBP,.raf,.RAF,' +
+  '.pdf,.txt,.md,.csv,.json,.mp4,.m4v,.mov,.webm,.mkv,.mp3,.m4a,.wav,.ogg,.glb,.gltf';
 
 export default function AttachmentGallery({
   featureId,
@@ -63,6 +65,7 @@ export default function AttachmentGallery({
   }, [lightbox]);
 
   const images = attachments.filter((item) => item.content_type.startsWith('image/'));
+  const files = attachments.filter((item) => !item.content_type.startsWith('image/'));
   const primary = images[0];
 
   const openFull = useCallback(
@@ -102,8 +105,22 @@ export default function AttachmentGallery({
     }
   }
 
+  async function downloadAttachment(attachment: Attachment) {
+    try {
+      const blob = await authedBlob(attachment.content_url);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = attachment.filename;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not download file');
+    }
+  }
+
   async function removePhoto(attachment: Attachment) {
-    if (!window.confirm('Remove this photo from the feature? Uploaded copies are deleted; original server/NAS files are left in place.')) return;
+    if (!window.confirm('Remove this attachment from the feature? Uploaded copies are deleted; original server/NAS files are left in place.')) return;
     try {
       await api(`/attachments/${attachment.id}`, { method: 'DELETE' });
       setLightbox(null);
@@ -114,12 +131,12 @@ export default function AttachmentGallery({
     }
   }
 
-  if (!images.length && !editable) return null;
+  if (!attachments.length && !editable) return null;
 
   return (
     <div className="attachment-gallery">
       <div className="attachment-head">
-        <h3>Photos {images.length > 0 ? `(${images.length})` : ''}</h3>
+        <h3>Attachments {attachments.length > 0 ? `(${attachments.length})` : ''}</h3>
         {editable && (
           <>
             <input
@@ -136,7 +153,7 @@ export default function AttachmentGallery({
               disabled={busy}
               onClick={() => inputRef.current?.click()}
             >
-              {busy ? 'Adding…' : 'Add photo'}
+              {busy ? 'Adding…' : 'Add file'}
             </button>
           </>
         )}
@@ -153,8 +170,36 @@ export default function AttachmentGallery({
             {primary.filename} · {formatBytes(primary.size_bytes)}
           </span>
         </button>
-      ) : (
-        <p className="hint">No photos attached to this feature.</p>
+      ) : files.length === 0 ? (
+        <p className="hint">No attachments on this feature.</p>
+      ) : null}
+
+      {files.length > 0 && (
+        <div className="media-list">
+          {files.map((attachment) => (
+            <div key={attachment.id} className="media-row">
+              <Icon name="file" size={15} />
+              <div className="grow">
+                <strong>{attachment.filename}</strong>
+                <small>{attachment.content_type} · {formatBytes(attachment.size_bytes)}</small>
+              </div>
+              <button
+                className="btn btn-ghost btn-xs"
+                onClick={() => void downloadAttachment(attachment)}
+              >
+                Download
+              </button>
+              {editable && (
+                <button
+                  className="btn btn-ghost btn-xs danger"
+                  onClick={() => void removePhoto(attachment)}
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
       )}
 
       {images.length > 1 && (

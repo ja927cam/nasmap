@@ -1,6 +1,6 @@
 {
   "version": 8,
-  "name": "NasMap local OSM",
+  "name": "Strata local OSM",
   "sources": {
     "nasmap": {
       "type": "vector",

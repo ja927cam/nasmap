@@ -1,6 +1,6 @@
 # OpenStreetMap: basemaps, extracts and publishing
 
-NasMap is not an OSM editor. It supports OSM in three separate ways:
+Strata is not an OSM editor. It supports OSM in three separate ways:
 
 1. a basemap (remote raster or local vector tiles);
 2. importing raw `.osm.pbf` extracts into the `osm` PostGIS schema with
@@ -19,7 +19,7 @@ OSM_TILE_ATTRIBUTION=&copy; OpenStreetMap contributors
 ```
 
 This works after `docker compose up` with no downloads. By default MapLibre
-requests tiles from NasMap's `/api/v1/basemap/osm/{z}/{x}/{y}.png` endpoint,
+requests tiles from Strata's `/api/v1/basemap/osm/{z}/{x}/{y}.png` endpoint,
 which fetches the configured upstream tile only on a cache miss and stores it in
 the `tiles_data` volume for `OSM_TILE_CACHE_TTL_DAYS` (default 7). There is no
 prefetching. Set `OSM_TILE_PROXY=false` to request the upstream URL directly.
@@ -31,7 +31,7 @@ The attribution is always displayed.
 > use local vector tiles below or a commercial/self-hosted tile provider, and
 > update `OSM_TILE_URL`. See the
 > [OSM tile usage policy](https://operations.osmfoundation.org/policies/tiles/).
-> NasMap's on-demand cache is a courtesy to the upstream service, not a license
+> Strata's on-demand cache is a courtesy to the upstream service, not a license
 > for heavy use. Do not raise traffic beyond light personal use without switching
 > providers or generating local tiles.
 
@@ -77,7 +77,7 @@ omits text labels so it has no font dependency. Extend
 for a place or drag a rectangle in the map picker, choose a category (buildings,
 landuse, roads, waterways, natural, amenities, leisure or administrative
 boundaries) and a layer name. The worker
-creates ordinary NasMap features, so the existing draw, vertex-edit, delete,
+creates ordinary Strata features, so the existing draw, vertex-edit, delete,
 attribute and styling tools work on them.
 
 - Buildings, landuse and other closed features become polygons.
@@ -88,7 +88,7 @@ attribute and styling tools work on them.
 - MultiPolygon/MultiLineString relations are split into editable parts; holes
   are preserved on individual polygons.
 
-**Edits are local.** NasMap does not write changes back to OpenStreetMap
+**Edits are local.** Strata does not write changes back to OpenStreetMap
 automatically. OSM publishing remains a separate, explicitly confirmed workflow
 for point nodes.
 
@@ -129,7 +129,7 @@ service (profile `osm`), with:
 
 The tables are `osm.osm_nodes`, `osm.osm_ways`, `osm.osm_relations`,
 `osm.osm_point`, `osm.osm_line`, `osm.osm_polygon`, `osm.osm_roads`, etc.
-`--drop` makes re-imports idempotent. Raw OSM is not exposed through the NasMap
+`--drop` makes re-imports idempotent. Raw OSM is not exposed through the Strata
 web API; query it with SQL or connect QGIS to the database over an SSH tunnel.
 
 `make update-osm REGION=...` downloads the latest extract, re-imports it and
@@ -157,14 +157,14 @@ diffs, run `osm2pgsql-replication` yourself against the same database.
    ```
 4. Restart the stack, then **Settings → OpenStreetMap → Connect**.
 
-NasMap requests only `read_prefs write_api` by default. OAuth tokens are
+Strata requests only `read_prefs write_api` by default. OAuth tokens are
 encrypted with Fernet. If `OSM_TOKEN_ENCRYPTION_KEY` is empty, a key is derived
 from `SECRET_KEY`; rotating `SECRET_KEY` forces everyone to reconnect OSM.
 
 ### OSM sign-in
 
 Users with an OSM account that is already linked can sign in with OSM from the
-login page (`GET /api/v1/osm/login`). The callback creates a NasMap refresh
+login page (`GET /api/v1/osm/login`). The callback creates a Strata refresh
 session and redirects back into the SPA.
 
 First-time OSM users get a clear “no linked account” message unless you set
@@ -214,12 +214,12 @@ The API performs:
      `osm_version` and `osm_changeset` on the feature;
    - writes an audit entry and an `app.osm_publications` row.
 
-If the upload fails after a changeset was created, NasMap attempts to close the
+If the upload fails after a changeset was created, Strata attempts to close the
 changeset and records the error in `app.osm_publications`.
 
 ### Review rules
 
-- OSM edits are public and permanent. NasMap requires an explicit confirmation
+- OSM edits are public and permanent. Strata requires an explicit confirmation
   checkbox and a non-empty changeset comment.
 - Only tags the user reviewed are sent. Internal properties (`_nasmap*`,
   `osm_*`, `geometry_wkt`) are excluded.

@@ -38,7 +38,7 @@ export default function RegisterPage() {
             <Icon name="layers" size={22} strokeWidth={2} />
           </span>
           <div>
-            <h1>NasMap</h1>
+            <h1>Strata</h1>
             <p>Self-hosted geospatial data</p>
           </div>
         </div>
