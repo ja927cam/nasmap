@@ -147,6 +147,9 @@ export default function DashboardPage() {
         <section className="panel">
           <div className="panel-head">
             <h2>Recent imports</h2>
+            <Link to="/jobs" className="link">
+              View all
+            </Link>
           </div>
           {jobs.length === 0 ? (
             <EmptyState title="No imports yet">

@@ -6,6 +6,7 @@ import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import MapPage from './pages/MapPage';
 import LivePage from './pages/LivePage';
+import JobsPage from './pages/JobsPage';
 import OverlaysPage from './pages/OverlaysPage';
 import SettingsPage from './pages/SettingsPage';
 import AdminPage from './pages/AdminPage';
@@ -34,6 +35,7 @@ export default function App() {
       >
         <Route index element={<DashboardPage />} />
         <Route path="map" element={<MapPage />} />
+        <Route path="jobs" element={<JobsPage />} />
         <Route path="live" element={<LivePage />} />
         <Route path="overlays" element={<OverlaysPage />} />
         <Route path="tessera" element={<Navigate to="/overlays" replace />} />

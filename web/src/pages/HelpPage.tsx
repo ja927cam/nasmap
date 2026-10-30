@@ -82,6 +82,7 @@ export default function HelpPage() {
           <li><strong>Filter to view</strong> — only load features intersecting the current viewport.</li>
           <li><strong>Find a place</strong> — toolbar search flies to a place; the crosshair/geolocate control uses your browser location.</li>
           <li><strong>Layer filter</strong> — the box above the layer list narrows long layer lists by name.</li>
+          <li><strong>Feature properties</strong> — edit the Fields view for normal tags; use JSON only for nested values. The table has its own row filter.</li>
         </ul>
       </section>
 

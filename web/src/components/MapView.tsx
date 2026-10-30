@@ -305,6 +305,7 @@ export default function MapView(props: MapViewProps) {
         if (meta.wms) tiles = [wmsTileUrl(layer.id)];
         else tiles = [tileUrl(layer.id)];
         const xyz = meta.xyz || {};
+        const rasterStyle = layer.style || {};
         const bounds = meta.total_bounds || meta.raster?.bounds_wgs84;
         const rasterSource: any = {
           type: 'raster',
@@ -321,7 +322,7 @@ export default function MapView(props: MapViewProps) {
           type: 'raster',
           source: sourceId,
           layout: { visibility: visible ? 'visible' : 'none' },
-          paint: { 'raster-opacity': opacity },
+          paint: { 'raster-opacity': opacity * (rasterStyle.opacity ?? 1) },
         } as any);
         continue;
       }

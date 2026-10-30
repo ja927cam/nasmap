@@ -4,6 +4,7 @@ from pathlib import Path
 from PIL import Image
 
 from app.config import settings
+from app.services import live, overpass
 from app.workers import tasks
 
 
@@ -245,3 +246,123 @@ async def test_attach_photo_to_any_feature(admin_client):
     assert content.status_code == 200
     deleted = await admin_client.delete(f"/api/v1/attachments/{attachment['id']}")
     assert deleted.status_code == 200
+
+
+async def test_osm_import_job(admin_client, monkeypatch):
+    import app.routers.osm_data as osm_data_router
+
+    payload = {
+        "elements": [
+            {
+                "type": "way",
+                "id": 9001,
+                "version": 2,
+                "tags": {"building": "yes", "name": "Test Hall"},
+                "geometry": [
+                    {"lat": 52.2, "lon": 0.1},
+                    {"lat": 52.2, "lon": 0.101},
+                    {"lat": 52.201, "lon": 0.101},
+                    {"lat": 52.201, "lon": 0.1},
+                    {"lat": 52.2, "lon": 0.1},
+                ],
+            }
+        ]
+    }
+
+    async def fake_fetch(bbox, category):
+        return payload
+
+    monkeypatch.setattr(overpass, "fetch_elements", fake_fetch)
+    monkeypatch.setattr(osm_data_router, "enqueue_import", lambda job_id: None)
+    response = await admin_client.post(
+        "/api/v1/osm/import",
+        json={
+            "bbox": [0.099, 52.199, 0.102, 52.202],
+            "category": "buildings",
+            "name": "OSM test buildings",
+        },
+    )
+    assert response.status_code == 202, response.text
+    job_id = response.json()["id"]
+    await tasks._process(job_id)
+    job = (await admin_client.get(f"/api/v1/imports/{job_id}")).json()
+    assert job["status"] == "succeeded", job
+    assert job["result"]["feature_count"] == 1
+    layer_id = job["layer_id"]
+    layer = (await admin_client.get(f"/api/v1/layers/{layer_id}")).json()
+    assert layer["geometry_type"] == "polygon"
+    assert layer["source_type"] == "osm"
+    assert layer["metadata"]["provider"] == "osm"
+    features = (await admin_client.get(f"/api/v1/layers/{layer_id}/features")).json()
+    assert features["meta"]["total"] == 1
+    assert features["features"][0]["properties"]["osm_id"] == 9001
+
+
+async def test_live_weather_and_earthquake_layers(admin_client, monkeypatch):
+    async def weather(bbox, grid=None):
+        return [
+            {
+                "properties": {"name": "A", "temperature_c": 12.0},
+                "geometry": "POINT(0.0 52.0)",
+                "valid": True,
+                "error": None,
+            },
+            {
+                "properties": {"name": "B", "temperature_c": 13.0},
+                "geometry": "POINT(0.1 52.1)",
+                "valid": True,
+                "error": None,
+            },
+        ]
+
+    monkeypatch.setattr(live, "fetch_weather_grid", weather)
+    created = await admin_client.post(
+        "/api/v1/live/weather/grid",
+        json={"bbox": [-0.1, 51.9, 0.2, 52.2], "name": "Weather test"},
+    )
+    assert created.status_code == 200, created.text
+    layer = created.json()
+    assert layer["metadata"]["provider"] == "open-meteo"
+    features = (await admin_client.get(f"/api/v1/layers/{layer['id']}/features")).json()
+    assert features["meta"]["total"] == 2
+
+    async def weather_one(bbox, grid=None):
+        return [
+            {
+                "properties": {"name": "A", "temperature_c": 14.0},
+                "geometry": "POINT(0.0 52.0)",
+                "valid": True,
+                "error": None,
+            }
+        ]
+
+    monkeypatch.setattr(live, "fetch_weather_grid", weather_one)
+    refreshed = await admin_client.post(
+        "/api/v1/live/weather/grid",
+        json={
+            "bbox": [-0.1, 51.9, 0.2, 52.2],
+            "layer_id": layer["id"],
+            "name": "Weather test",
+        },
+    )
+    assert refreshed.status_code == 200, refreshed.text
+    features = (await admin_client.get(f"/api/v1/layers/{layer['id']}/features")).json()
+    assert features["meta"]["total"] == 1
+
+    async def quakes(min_magnitude=2.5):
+        return [
+            {
+                "properties": {"name": "M5 test", "magnitude": 5.0},
+                "geometry": "POINT(1.0 2.0)",
+                "valid": True,
+                "error": None,
+            }
+        ]
+
+    monkeypatch.setattr(live, "fetch_earthquakes", quakes)
+    quake = await admin_client.post(
+        "/api/v1/live/earthquakes",
+        json={"min_magnitude": 4.5, "name": "Quake test"},
+    )
+    assert quake.status_code == 200, quake.text
+    assert quake.json()["metadata"]["provider"] == "usgs-earthquakes"

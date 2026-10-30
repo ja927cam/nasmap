@@ -21,12 +21,29 @@ export default function AttributeTable({
     return Array.from(keys).slice(0, 12);
   }, [features]);
   const [page, setPage] = useState(0);
+  const [query, setQuery] = useState('');
   const pageSize = 25;
-  const totalPages = Math.max(1, Math.ceil(features.length / pageSize));
-  const current = features.slice(page * pageSize, page * pageSize + pageSize);
+  const filtered = useMemo(() => {
+    const value = query.trim().toLowerCase();
+    if (!value) return features;
+    return features.filter((feature) => JSON.stringify(feature.properties || {}).toLowerCase().includes(value));
+  }, [features, query]);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const current = filtered.slice(page * pageSize, page * pageSize + pageSize);
 
   return (
     <div className="attribute-table">
+      <div className="table-tools">
+        <input
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setPage(0);
+          }}
+          placeholder="Filter rows…"
+          aria-label="Filter table rows"
+        />
+      </div>
       <div className="table-scroll">
         <table>
           <thead>
@@ -53,7 +70,8 @@ export default function AttributeTable({
       </div>
       <div className="table-footer">
         <span className="muted">
-          {features.length.toLocaleString()} feature{features.length === 1 ? '' : 's'}
+          {filtered.length.toLocaleString()} of {features.length.toLocaleString()} feature
+          {features.length === 1 ? '' : 's'}
           {columns.length === 0 ? ' · no attributes' : ''}
         </span>
         <div className="pager">
