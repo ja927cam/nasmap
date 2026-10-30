@@ -2075,6 +2075,39 @@ tbody tr.selected {
   color: var(--accent);
 }
 
+.version-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 220px;
+  overflow: auto;
+}
+
+.version-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 7px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface-2);
+  font-size: 11px;
+}
+
+.version-row strong {
+  min-width: 28px;
+}
+
+.version-row span {
+  flex: 1;
+  color: var(--muted);
+  text-transform: capitalize;
+}
+
+.version-row small {
+  color: var(--muted);
+}
+
 .property-editor {
   display: flex;
   flex-direction: column;

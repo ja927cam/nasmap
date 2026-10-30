@@ -368,19 +368,54 @@ export default function MapView(props: MapViewProps) {
           'line-opacity': opacity * baseOpacity,
         },
       } as any);
+      const meta = layer.metadata || {};
+      const provider = meta.provider;
+      const pointPaint: any = {
+        'circle-radius': s.circleRadius ?? 6,
+        'circle-color': color,
+        'circle-opacity': opacity * baseOpacity,
+        'circle-stroke-color': '#ffffff',
+        'circle-stroke-width': 1.5,
+      };
+      if (provider === 'open-meteo') {
+        pointPaint['circle-color'] = [
+          'interpolate',
+          ['linear'],
+          ['coalesce', ['get', 'temperature_c'], 10],
+          -10,
+          '#1d4ed8',
+          0,
+          '#0ea5e9',
+          10,
+          '#eab308',
+          20,
+          '#f97316',
+          30,
+          '#dc2626',
+        ];
+        pointPaint['circle-radius'] = 7;
+      } else if (provider === 'usgs-earthquakes') {
+        pointPaint['circle-radius'] = [
+          'interpolate',
+          ['linear'],
+          ['coalesce', ['get', 'magnitude'], 1],
+          0,
+          4,
+          4,
+          8,
+          7,
+          18,
+        ];
+        pointPaint['circle-color'] = '#dc2626';
+        pointPaint['circle-opacity'] = 0.72 * opacity;
+      }
       map.addLayer({
         id: `nasmap-lyr-${layer.id}-point`,
         type: 'circle',
         source: sourceId,
         filter: ['in', ['geometry-type'], ['literal', ['Point', 'MultiPoint']]],
         layout: { visibility: visible ? 'visible' : 'none' },
-        paint: {
-          'circle-radius': s.circleRadius ?? 6,
-          'circle-color': color,
-          'circle-opacity': opacity * baseOpacity,
-          'circle-stroke-color': '#ffffff',
-          'circle-stroke-width': 1.5,
-        },
+        paint: pointPaint,
       } as any);
       // Larger transparent target so small points remain easy to select.
       map.addLayer({

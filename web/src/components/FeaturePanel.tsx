@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { GeoFeature, Layer } from '../api/types';
 import AttachmentGallery from './AttachmentGallery';
+import { api } from '../api/client';
 import Icon from './Icon';
+import { formatDate } from './ui';
 
 interface PropertyRow {
   key: string;
@@ -76,13 +78,36 @@ export default function FeaturePanel({
   const [mode, setMode] = useState<'fields' | 'json'>('fields');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [versions, setVersions] = useState<
+    { version: number; change_type: string; created_at: string }[]
+  >([]);
 
   useEffect(() => {
     setRows(toRows(props));
     setText(JSON.stringify(props, null, 2));
     setMode('fields');
+    setShowHistory(false);
+    setVersions([]);
     setError(null);
   }, [feature.id, props]);
+
+  async function toggleHistory() {
+    if (showHistory) {
+      setShowHistory(false);
+      return;
+    }
+    setShowHistory(true);
+    try {
+      setVersions(
+        await api<{ version: number; change_type: string; created_at: string }[]>(
+          `/features/${feature.id}/versions`,
+        ),
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not load history');
+    }
+  }
 
   async function save() {
     setBusy(true);
@@ -134,6 +159,9 @@ export default function FeaturePanel({
       <div className="feature-props-head">
         <h3>Properties</h3>
         <div className="mini-tabs">
+          <button className={showHistory ? 'mini-tab active' : 'mini-tab'} onClick={() => void toggleHistory()}>
+            History
+          </button>
           <button
             className={mode === 'fields' ? 'mini-tab active' : 'mini-tab'}
             onClick={() => {
@@ -147,6 +175,7 @@ export default function FeaturePanel({
                   /* keep field values if the JSON is incomplete */
                 }
               }
+              setShowHistory(false);
               setMode('fields');
             }}
           >
@@ -156,6 +185,7 @@ export default function FeaturePanel({
             className={mode === 'json' ? 'mini-tab active' : 'mini-tab'}
             onClick={() => {
               setText(JSON.stringify(parseRows(rows), null, 2));
+              setShowHistory(false);
               setMode('json');
             }}
           >
@@ -164,7 +194,21 @@ export default function FeaturePanel({
         </div>
       </div>
 
-      {mode === 'fields' ? (
+      {showHistory ? (
+        <div className="version-list">
+          {versions.length === 0 ? (
+            <p className="hint">No versions recorded yet.</p>
+          ) : (
+            versions.map((version) => (
+              <div key={`${version.version}-${version.created_at}`} className="version-row">
+                <strong>v{version.version}</strong>
+                <span>{version.change_type}</span>
+                <small>{formatDate(version.created_at)}</small>
+              </div>
+            ))
+          )}
+        </div>
+      ) : mode === 'fields' ? (
         <div className="property-editor">
           <div className="property-head">
             <span>Key</span>
