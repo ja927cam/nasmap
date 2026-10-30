@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..audit import audit
-from ..auth import EditorUser
+from ..auth import CurrentUser, EditorUser
 from ..database import get_db
 from ..models import Layer
 from ..rate_limit import auth_rate_limit
@@ -247,12 +247,12 @@ async def _save(db: AsyncSession, layer: Layer, request: Request, user) -> dict:
 
 
 @router.get("/providers")
-async def providers(user: EditorUser):
+async def providers(user: CurrentUser):
     return {"providers": PROVIDERS, "presets": PRESETS}
 
 
 @router.get("/presets")
-async def presets(user: EditorUser):
+async def presets(user: CurrentUser):
     return PRESETS
 
 
@@ -408,7 +408,7 @@ async def create_vectortile(
 @router.post("/wms/capabilities", dependencies=[Depends(auth_rate_limit)])
 async def wms_capabilities(
     payload: WMSCapabilitiesIn,
-    user: EditorUser,
+    user: CurrentUser,
 ):
     request_url = payload.url
     if "request=" not in request_url.lower():

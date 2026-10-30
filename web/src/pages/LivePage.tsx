@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client';
+import { useAuth } from '../api/auth';
 import { usePublicConfig } from '../api/config';
 import type { Layer, Paged } from '../api/types';
 import BBoxPicker from '../components/BBoxPicker';
@@ -12,6 +13,8 @@ type BBox = [number, number, number, number];
 
 export default function LivePage() {
   const config = usePublicConfig();
+  const { user } = useAuth();
+  const canEdit = user?.role === 'admin' || user?.role === 'editor';
   const [layers, setLayers] = useState<Layer[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
@@ -94,7 +97,8 @@ export default function LivePage() {
         <div className="button-row">
           <button
             className="btn btn-primary btn-sm"
-            disabled={busy === 'radar'}
+            disabled={busy === 'radar' || !canEdit}
+            title={canEdit ? undefined : 'Editor access required'}
             onClick={() =>
               void run(
                 'radar',
@@ -153,7 +157,8 @@ export default function LivePage() {
             )}
             <button
               className="btn btn-primary"
-              disabled={!bbox || busy === 'weather'}
+              disabled={!bbox || busy === 'weather' || !canEdit}
+              title={canEdit ? undefined : 'Editor access required'}
               onClick={() =>
                 bbox &&
                 void run(
@@ -202,7 +207,8 @@ export default function LivePage() {
                 </div>
                 <button
                   className="btn btn-ghost btn-xs"
-                  disabled={busy === `weather-${layer.id}`}
+                  disabled={busy === `weather-${layer.id}` || !canEdit}
+                  title={canEdit ? undefined : 'Editor access required'}
                   onClick={() =>
                     void run(
                       `weather-${layer.id}`,
@@ -259,7 +265,8 @@ export default function LivePage() {
         <div className="button-row">
           <button
             className="btn btn-primary btn-sm"
-            disabled={busy === 'quakes'}
+            disabled={busy === 'quakes' || !canEdit}
+            title={canEdit ? undefined : 'Editor access required'}
             onClick={() =>
               void run(
                 'quakes',
@@ -296,7 +303,8 @@ export default function LivePage() {
                 </div>
                 <button
                   className="btn btn-ghost btn-xs"
-                  disabled={busy === `quake-${layer.id}`}
+                  disabled={busy === `quake-${layer.id}` || !canEdit}
+                  title={canEdit ? undefined : 'Editor access required'}
                   onClick={() =>
                     void run(
                       `quake-${layer.id}`,

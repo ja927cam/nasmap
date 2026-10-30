@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, download } from '../api/client';
+import { useAuth } from '../api/auth';
 import { usePublicConfig } from '../api/config';
 import type { ImportJob, Layer, Paged } from '../api/types';
 import Icon from '../components/Icon';
@@ -45,6 +46,8 @@ interface Dataset {
 
 export default function OverlaysPage() {
   const config = usePublicConfig();
+  const { user } = useAuth();
+  const canEdit = user?.role === 'admin' || user?.role === 'editor';
   const [provider, setProvider] = useState<Provider>('xyz');
   const [overlays, setOverlays] = useState<Layer[]>([]);
   const [datasets, setDatasets] = useState<Dataset[]>([]);
@@ -94,6 +97,7 @@ export default function OverlaysPage() {
         </div>
       </header>
 
+      {canEdit && (
       <section className="panel">
         <div className="panel-head">
           <h2>One-click overlays</h2>
@@ -143,7 +147,9 @@ export default function OverlaysPage() {
           ))}
         </div>
       </section>
+      )}
 
+      {canEdit && (
       <section className="panel">
         <div className="panel-head">
           <h2>Add overlay</h2>
@@ -192,6 +198,7 @@ export default function OverlaysPage() {
           <Link to="/map?new=url">Map → Add layer → From URL</Link>.
         </p>
       </section>
+      )}
 
       <section className="panel">
         <div className="panel-head">
