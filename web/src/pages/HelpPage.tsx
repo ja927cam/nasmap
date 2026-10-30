@@ -80,6 +80,8 @@ export default function HelpPage() {
           <li><strong>Distance / Area</strong> — click points; the live result stays after finishing.</li>
           <li><strong>Backspace</strong> — remove the last vertex. <strong>Esc</strong> — cancel drawing.</li>
           <li><strong>Filter to view</strong> — only load features intersecting the current viewport.</li>
+          <li><strong>Find a place</strong> — toolbar search flies to a place; the crosshair/geolocate control uses your browser location.</li>
+          <li><strong>Layer filter</strong> — the box above the layer list narrows long layer lists by name.</li>
         </ul>
       </section>
 

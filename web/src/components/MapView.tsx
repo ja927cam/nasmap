@@ -516,6 +516,15 @@ export default function MapView(props: MapViewProps) {
     });
     mapRef.current = map;
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
+    map.addControl(
+      new maplibregl.GeolocateControl({
+        positionOptions: { enableHighAccuracy: true },
+        trackUserLocation: false,
+        showAccuracyCircle: true,
+        fitBoundsOptions: { maxZoom: 15 },
+      }),
+      'top-right',
+    );
     map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
     map.on('load', () => {
       syncOverlays();

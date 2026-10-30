@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Layer } from '../api/types';
 import Icon, { type IconName } from './Icon';
 import { Badge } from './ui';
@@ -37,6 +38,12 @@ function visibilityLabel(value: string) {
 }
 
 export default function LayerPanel(props: Props) {
+  const [filter, setFilter] = useState('');
+  const visibleLayers = filter.trim()
+    ? props.layers.filter((layer) =>
+        layer.name.toLowerCase().includes(filter.trim().toLowerCase()),
+      )
+    : props.layers;
   return (
     <div className="layer-panel">
       <div className="panel-head">
@@ -53,9 +60,21 @@ export default function LayerPanel(props: Props) {
           </div>
         )}
       </div>
+      <div className="layer-filter">
+        <Icon name="search" size={13} />
+        <input
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          placeholder="Filter layers"
+          aria-label="Filter layers by name"
+        />
+      </div>
       <div className="layer-list">
         {props.layers.length === 0 && <p className="muted pad">No layers yet. Add one to begin.</p>}
-        {props.layers.map((layer) => {
+        {props.layers.length > 0 && visibleLayers.length === 0 && (
+          <p className="muted pad">No layer matches “{filter}”.</p>
+        )}
+        {visibleLayers.map((layer) => {
           const isVisible = props.visible[layer.id] !== false;
           const isActive = props.activeLayerId === layer.id;
           const isRaster = layer.geometry_type === 'raster';

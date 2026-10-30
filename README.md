@@ -79,6 +79,10 @@ make restore FILE=backups/<timestamp>
 Only Caddy publishes ports (`80`/`443`). Database, Redis, API, worker, web and
 TileServer GL stay on the internal Docker network.
 
+> Upgrade note: the Compose project name and internal database/volume/schema
+> identifiers remain `nasmap` for compatibility with existing installations.
+> The product name and repository are Strata.
+
 ## Platform notes
 
 The stack uses standard `docker compose`, so it runs on Linux and macOS directly.
@@ -86,7 +90,7 @@ On NAS systems, create a **Project / Stack** from this repository (or upload it)
 paste the `.env` values, and use the platform’s Compose UI:
 
 - **Synology DSM**: Container Manager → Project → Create. Use a folder under
-  `docker/nasmap`; keep the default bridge network.
+  `docker/strata`; keep the default bridge network.
 - **QNAP**: Container Station → Applications → Create; import
   `docker-compose.yml`.
 - **TrueNAS SCALE**: Apps → Custom App → Install via YAML, or run from a jail

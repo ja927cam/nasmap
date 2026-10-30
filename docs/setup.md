@@ -81,6 +81,14 @@ account (it becomes admin), and import a sample file.
 | `OSM_OAUTH_ENABLED` | false | Requires client id/secret. |
 | `OSM_API_BASE_URL` | api.openstreetmap.org | Use dev server for testing. |
 | `OSM_SIGNIN_AUTO_CREATE` | false | Create viewer accounts on first OSM sign-in. |
+| `OVERPASS_ENABLED` | true | Editable OSM import provider. |
+| `OVERPASS_URL` | overpass-api.de | Use your own Overpass instance for heavy use. |
+| `OVERPASS_MAX_AREA_DEG2` | 0.05 | Per-import area cap. |
+| `OVERPASS_MAX_MB` | 64 | Overpass response cap. |
+| `RAINVIEWER_ENABLED` | true | Live weather radar. |
+| `OPEN_METEO_URL` | api.open-meteo.com | Weather point provider. |
+| `USGS_EARTHQUAKES_URL` | earthquake.usgs.gov | Current-day earthquake feed. |
+| `LIVE_GRID_POINTS` | 3 | Default weather grid size. |
 | `TESSERA_ENABLED` | true | Disable to hide the UI. |
 | `TESSERA_VERSION` | v1.1 | GeoTessera dataset version. |
 | `TESSERA_MAX_TILES` | 64 | Per-job tile cap. |

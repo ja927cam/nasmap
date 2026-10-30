@@ -18,6 +18,16 @@ const providers: { id: Provider; label: string; hint: string }[] = [
   { id: 'tessera', label: 'Tessera', hint: 'Import GeoTessera satellite embeddings.' },
 ];
 
+interface Preset {
+  id: string;
+  label: string;
+  provider: 'xyz' | 'wms';
+  description: string;
+  attribution: string;
+  licence: string;
+  config: Record<string, unknown>;
+}
+
 interface Dataset {
   id: string;
   layer_id: string;
@@ -37,7 +47,9 @@ export default function OverlaysPage() {
   const [provider, setProvider] = useState<Provider>('xyz');
   const [overlays, setOverlays] = useState<Layer[]>([]);
   const [datasets, setDatasets] = useState<Dataset[]>([]);
+  const [presets, setPresets] = useState<Preset[]>([]);
   const [loading, setLoading] = useState(true);
+  const [presetBusy, setPresetBusy] = useState<string | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const [created, setCreated] = useState<Layer | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -52,6 +64,7 @@ export default function OverlaysPage() {
             (layer.source_type === 'tessera' || layer.source_type === 'url'),
         ),
       );
+      setPresets(await api<Preset[]>('/overlays/presets'));
       if (config?.tessera_enabled) {
         setDatasets(await api<Dataset[]>('/tessera/datasets'));
       }
@@ -78,6 +91,56 @@ export default function OverlaysPage() {
           </p>
         </div>
       </header>
+
+      <section className="panel">
+        <div className="panel-head">
+          <h2>One-click overlays</h2>
+        </div>
+        <p className="hint">
+          These presets use public services. Check each provider’s terms for production use.
+        </p>
+        <div className="preset-grid">
+          {presets.map((preset) => (
+            <div key={preset.id} className="preset-card">
+              <div>
+                <strong>{preset.label}</strong>
+                <p>{preset.description}</p>
+              </div>
+              <button
+                className="btn btn-secondary btn-xs"
+                disabled={presetBusy === preset.id}
+                onClick={async () => {
+                  setPresetBusy(preset.id);
+                  setError(null);
+                  try {
+                    const layer = await api<Layer>(
+                      preset.provider === 'wms' ? '/overlays/wms' : '/overlays/xyz',
+                      {
+                        method: 'POST',
+                        body: {
+                          name: preset.label,
+                          visibility: 'private',
+                          attribution: preset.attribution,
+                          licence: preset.licence,
+                          ...preset.config,
+                        },
+                      },
+                    );
+                    setCreated(layer);
+                    await load();
+                  } catch (err) {
+                    setError(err instanceof Error ? err.message : 'Could not add preset');
+                  } finally {
+                    setPresetBusy(null);
+                  }
+                }}
+              >
+                {presetBusy === preset.id ? 'Adding…' : 'Add'}
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <section className="panel">
         <div className="panel-head">

@@ -13,6 +13,7 @@ import LayerPanel from '../components/LayerPanel';
 import LayerSharing from '../components/LayerSharing';
 import LayerStyler from '../components/LayerStyler';
 import Icon from '../components/Icon';
+import MapPlaceSearch from '../components/MapPlaceSearch';
 import MapView, { type MapTool } from '../components/MapView';
 import OsmDataDialog from '../components/OsmDataDialog';
 import OsmPublishDialog from '../components/OsmPublishDialog';
@@ -356,6 +357,14 @@ export default function MapPage() {
             <span>Area</span>
           </button>
         </div>
+        <MapPlaceSearch
+          onSelect={(box, lon, lat) => {
+            const map = mapRef.current;
+            if (!map) return;
+            if (box) map.fitBounds([[box[0], box[1]], [box[2], box[3]]], { padding: 60, maxZoom: 15 });
+            else map.flyTo({ center: [lon, lat], zoom: 13 });
+          }}
+        />
         <form
           className="map-search"
           onSubmit={(e) => {

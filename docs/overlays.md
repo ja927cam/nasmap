@@ -14,6 +14,10 @@ a provider configuration in `layer.metadata`.
 | GeoTIFF / COG | Download a remote raster and convert it to a COG layer |
 | Tessera | GeoTessera satellite embeddings, imported as a COG layer |
 
+The **Overlays** page also has one-click presets for OpenTopoMap, OpenSeaMap,
+Esri World Imagery, Sentinel-2 cloudless and NASA GIBS. Presets are ordinary
+layers; check each provider's terms before production use.
+
 The **Overlays** page adds XYZ, TileJSON and WMS sources immediately. GeoTIFF/
 COG URLs and Tessera use the same page but run background jobs. Vector overlays
 from GeoJSON, WFS and ArcGIS are available from **Map → Add layer → From URL**.

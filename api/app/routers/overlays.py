@@ -28,6 +28,84 @@ from .layers import serialize_layer
 router = APIRouter(prefix="/overlays", tags=["overlays"])
 logger = logging.getLogger("nasmap.overlays")
 
+PRESETS = [
+    {
+        "id": "opentopomap",
+        "label": "OpenTopoMap",
+        "provider": "xyz",
+        "description": "Topographic map with contours and hillshade.",
+        "attribution": "© OpenStreetMap contributors, SRTM | © OpenTopoMap (CC-BY-SA)",
+        "licence": "CC BY-SA 3.0",
+        "config": {
+            "url_template": "https://a.tile.opentopomap.org/{z}/{x}/{y}.png",
+            "tile_size": 256,
+            "minzoom": 0,
+            "maxzoom": 17,
+            "scheme": "xyz",
+        },
+    },
+    {
+        "id": "openseamap",
+        "label": "OpenSeaMap",
+        "provider": "xyz",
+        "description": "Seamark and navigation overlay.",
+        "attribution": "© OpenSeaMap contributors",
+        "licence": "CC BY-SA 2.0",
+        "config": {
+            "url_template": "https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png",
+            "tile_size": 256,
+            "minzoom": 0,
+            "maxzoom": 18,
+            "scheme": "xyz",
+        },
+    },
+    {
+        "id": "esri-world-imagery",
+        "label": "Esri World Imagery",
+        "provider": "xyz",
+        "description": "Satellite and aerial imagery.",
+        "attribution": "Tiles © Esri",
+        "licence": "Esri terms of use",
+        "config": {
+            "url_template": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+            "tile_size": 256,
+            "minzoom": 0,
+            "maxzoom": 19,
+            "scheme": "xyz",
+        },
+    },
+    {
+        "id": "sentinel-2-cloudless",
+        "label": "Sentinel-2 cloudless",
+        "provider": "xyz",
+        "description": "EOX Sentinel-2 cloudless 2023 mosaic.",
+        "attribution": "Sentinel-2 cloudless by EOX (CC BY-NC-SA 4.0)",
+        "licence": "CC BY-NC-SA 4.0",
+        "config": {
+            "url_template": "https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2023_3857/default/g/{z}/{y}/{x}.jpg",
+            "tile_size": 256,
+            "minzoom": 0,
+            "maxzoom": 18,
+            "scheme": "xyz",
+        },
+    },
+    {
+        "id": "nasa-gibs",
+        "label": "NASA GIBS true colour",
+        "provider": "wms",
+        "description": "NASA VIIRS daily true-colour imagery.",
+        "attribution": "NASA Global Imagery Browse Services (GIBS)",
+        "licence": "NASA imagery usage policy",
+        "config": {
+            "url": "https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi",
+            "layers": "VIIRS_SNPP_CorrectedReflectance_TrueColor",
+            "version": "1.3.0",
+            "format": "image/jpeg",
+            "transparent": False,
+        },
+    },
+]
+
 PROVIDERS = [
     {
         "id": "xyz",
@@ -156,7 +234,12 @@ async def _save(db: AsyncSession, layer: Layer, request: Request, user) -> dict:
 
 @router.get("/providers")
 async def providers(user: EditorUser):
-    return {"providers": PROVIDERS}
+    return {"providers": PROVIDERS, "presets": PRESETS}
+
+
+@router.get("/presets")
+async def presets(user: EditorUser):
+    return PRESETS
 
 
 @router.post("/xyz", status_code=201)
