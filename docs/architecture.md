@@ -110,7 +110,9 @@ Reads require any layer role; writes additionally require a global
 
 ### Overlays
 
-XYZ/TMS, TileJSON, WMS and Tessera overlays all become normal raster layers.
+XYZ/TMS, TileJSON, WMS, vector-tile and Tessera overlays all become normal
+layers. Raster providers use the API tile proxy; vector providers use a PBF
+proxy with a generic fill/line/point style.
 Provider configuration lives in `layer.metadata`, so adding another provider does
 not require a new table or a new map data path. XYZ and TileJSON tiles are
 proxied and cached by the API; WMS uses a GetMap proxy; Tessera stores a COG.

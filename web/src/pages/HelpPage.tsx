@@ -61,6 +61,7 @@ export default function HelpPage() {
               <tr><td>GeoTIFF / COG</td><td>Add data or Overlays</td><td>Converted to COG and served as tiles.</td></tr>
               <tr><td>WMS, WFS, ArcGIS, STAC</td><td>Add data → From URL</td><td>Remote services; WMS/WFS proxied by Strata.</td></tr>
               <tr><td>XYZ, TileJSON, WMS</td><td>Overlays</td><td>Live raster overlays without copying pixels.</td></tr>
+              <tr><td>Vector TileJSON (PBF)</td><td>Overlays</td><td>Generic vector-tile rendering with a simple style.</td></tr>
               <tr><td>OSM area</td><td>Map → OSM data</td><td>Editable local copy, selected with a map rectangle.</td></tr>
               <tr><td>Geotagged photos</td><td>Add data → Photos</td><td>JPEG/TIFF/PNG/WebP/RAF; EXIF GPS required for automatic placement.</td></tr>
               <tr><td>NAS folder</td><td>Add data → Server / NAS</td><td>Bulk photos or geodata from a read-only mounted folder.</td></tr>
