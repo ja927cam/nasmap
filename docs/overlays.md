@@ -11,6 +11,7 @@ a provider configuration in `layer.metadata`.
 | XYZ / TMS | Any raster tile service with a `{z}/{x}/{y}` URL template |
 | TileJSON | A TileJSON document describing raster tiles |
 | WMS | An OGC Web Map Service layer |
+| Vector TileJSON | Vector PBF tiles described by TileJSON, styled generically |
 | GeoTIFF / COG | Download a remote raster and convert it to a COG layer |
 | Tessera | GeoTessera satellite embeddings, imported as a COG layer |
 
@@ -63,6 +64,14 @@ Provide a URL to a GeoTIFF or Cloud Optimized GeoTIFF. The worker downloads it,
 converts it to a COG with overviews, stores it in the uploads volume and registers
 a raster layer. Large files are bounded by `MAX_URL_IMPORT_MB`.
 
+## Vector tiles
+
+Provide a vector TileJSON URL and the source-layer name (or let Strata read the
+first `vector_layers` id). Tiles are proxied through the API, rendered with
+simple fill, line and point styles, and cached in the tiles volume. Use this for
+OpenMapTiles/compatible vector tile services. The style is intentionally generic;
+use raster overlays or import data for detailed cartography.
+
 ## Tessera
 
 See [tessera.md](tessera.md). Tessera is one provider, not a special case in the
@@ -83,6 +92,8 @@ GET  /api/v1/overlays/providers
 POST /api/v1/overlays/xyz
 POST /api/v1/overlays/tilejson
 POST /api/v1/overlays/wms
+POST /api/v1/overlays/vectortile
+POST /api/v1/overlays/wms/capabilities
 ```
 
 The response is the created layer. Use the normal layer/feature and map endpoints

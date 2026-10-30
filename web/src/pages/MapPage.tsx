@@ -118,7 +118,10 @@ export default function MapPage() {
     if (!config) return;
     const controller = new AbortController();
     const vectorLayers = layers.filter(
-      (layer) => !['raster', 'table'].includes(layer.geometry_type) && visible[layer.id] !== false,
+      (layer) =>
+        !['raster', 'table'].includes(layer.geometry_type) &&
+        !layer.metadata?.vector_tiles &&
+        visible[layer.id] !== false,
     );
     const jobs = vectorLayers.map(async (layer) => {
       const params = new URLSearchParams({ limit: '2000' });
@@ -151,6 +154,7 @@ export default function MapPage() {
     canWriteGlobally &&
       activeLayer &&
       !['raster', 'table'].includes(activeLayer.geometry_type) &&
+      !activeLayer.metadata?.vector_tiles &&
       (activeLayer.access_role === 'owner' || activeLayer.access_role === 'editor'),
   );
 
@@ -534,7 +538,10 @@ export default function MapPage() {
               onOsm={() => setOsmFeature(selectedFeature)}
             />
           )}
-          {activeLayer && !['raster', 'table'].includes(activeLayer.geometry_type) && showTable && (
+          {activeLayer &&
+            !['raster', 'table'].includes(activeLayer.geometry_type) &&
+            !activeLayer.metadata?.vector_tiles &&
+            showTable && (
             <div className="table-panel">
               <div className="table-head">
                 <strong>{activeLayer.name}</strong>

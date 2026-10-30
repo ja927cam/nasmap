@@ -35,6 +35,90 @@ def raster_source(layer) -> str:
     raise HTTPException(status_code=404, detail="Raster source is not available on disk")
 
 
+@router.get("/layers/{layer_id}/vector-tiles/{z}/{x}/{y}.pbf")
+async def vector_overlay_tile(
+    layer_id: str,
+    z: int,
+    x: int,
+    y: int,
+    user: CurrentUser,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    layer = await get_layer_or_404(db, layer_id)
+    await require_read(db, layer, user)
+    vector = (layer.metadata_ or {}).get("vector_tiles")
+    if not vector:
+        raise HTTPException(status_code=422, detail="Layer is not a vector tile overlay")
+    if not (0 <= z <= 22):
+        raise HTTPException(status_code=422, detail="Invalid zoom level")
+    max_tile = (2**z) - 1
+    if not (0 <= x <= max_tile and 0 <= y <= max_tile):
+        raise HTTPException(status_code=422, detail="Tile coordinates are out of range")
+    minzoom = int(vector.get("minzoom") or 0)
+    maxzoom = int(vector.get("maxzoom") or 22)
+    if z < minzoom or z > maxzoom:
+        return Response(status_code=204)
+    template = str(vector.get("url") or "")
+    if not template:
+        raise HTTPException(status_code=422, detail="Vector overlay has no tile URL")
+    url = (
+        template.replace("{s}", "a")
+        .replace("{z}", str(z))
+        .replace("{x}", str(x))
+        .replace("{y}", str(y))
+    )
+    try:
+        remote.validate_url(url)
+    except remote.UnsafeURLError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    cache_path = (
+        settings.tiles_dir / "vector-overlays" / str(layer.id) / str(z) / str(x) / f"{y}.pbf"
+    )
+    ttl_seconds = max(1, settings.overlay_tile_cache_ttl_hours) * 3600
+    try:
+        if cache_path.exists() and (time.time() - cache_path.stat().st_mtime) < ttl_seconds:
+            return Response(
+                content=cache_path.read_bytes(),
+                media_type="application/vnd.mapbox-vector-tile",
+                headers={"Cache-Control": "private, max-age=3600"},
+            )
+    except OSError:
+        pass
+    try:
+        async with httpx.AsyncClient(
+            timeout=30,
+            follow_redirects=False,
+            headers={
+                "User-Agent": "Strata/1.0 (self-hosted vector tile proxy)",
+                "Accept": "application/vnd.mapbox-vector-tile, application/x-protobuf",
+            },
+        ) as client:
+            upstream = await client.get(url)
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail=f"Vector tile upstream error: {exc}") from exc
+    if upstream.status_code in {204, 404}:
+        return Response(status_code=204)
+    if upstream.status_code >= 400:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Vector tile server returned HTTP {upstream.status_code}",
+        )
+    try:
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = cache_path.with_suffix(".tmp")
+        tmp.write_bytes(upstream.content)
+        tmp.replace(cache_path)
+    except OSError as exc:
+        logger.warning("could not cache vector tile: %s", exc)
+    return Response(
+        content=upstream.content,
+        media_type=upstream.headers.get("content-type", "application/vnd.mapbox-vector-tile").split(
+            ";"
+        )[0],
+        headers={"Cache-Control": "private, max-age=3600"},
+    )
+
+
 async def _remote_overlay_tile(layer, z: int, x: int, y: int) -> tuple[bytes, str, str]:
     metadata = layer.metadata_ or {}
     xyz = dict(metadata.get("xyz") or {})

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import maplibregl, { type Map as MapLibreMap } from 'maplibre-gl';
-import { getAccessToken, tileUrl, wmsTileUrl } from '../api/client';
+import { getAccessToken, tileUrl, vectorTileUrl, wmsTileUrl } from '../api/client';
 import type { FeatureCollection, GeoFeature, Layer } from '../api/types';
 
 export type MapTool = 'pan' | 'point' | 'line' | 'polygon' | 'measure-distance' | 'measure-area';
@@ -299,8 +299,61 @@ export default function MapView(props: MapViewProps) {
       const sourceId = `nasmap-src-${layer.id}`;
       const visible = current.visible[layer.id] !== false;
       const opacity = current.opacity[layer.id] ?? 1;
+      const meta = layer.metadata || {};
+      if (meta.vector_tiles) {
+        const vector = meta.vector_tiles;
+        const vectorSource: any = {
+          type: 'vector',
+          tiles: [vectorTileUrl(layer.id)],
+          minzoom: vector.minzoom ?? 0,
+          maxzoom: vector.maxzoom ?? 22,
+          attribution: layer.attribution || '',
+        };
+        map.addSource(sourceId, vectorSource);
+        const vs = layer.style || {};
+        const sourceLayer = vector.source_layer;
+        const vis = visible ? 'visible' : 'none';
+        map.addLayer({
+          id: `nasmap-lyr-${layer.id}-fill`,
+          type: 'fill',
+          source: sourceId,
+          'source-layer': sourceLayer,
+          filter: ['==', ['geometry-type'], 'Polygon'],
+          layout: { visibility: vis },
+          paint: {
+            'fill-color': vs.fillColor || vs.color || '#7c3aed',
+            'fill-opacity': (vs.fillOpacity ?? 0.16) * opacity,
+          },
+        } as any);
+        map.addLayer({
+          id: `nasmap-lyr-${layer.id}-line`,
+          type: 'line',
+          source: sourceId,
+          'source-layer': sourceLayer,
+          filter: ['in', ['geometry-type'], ['literal', ['LineString', 'Polygon']]],
+          layout: { visibility: vis },
+          paint: {
+            'line-color': vs.color || '#7c3aed',
+            'line-width': vs.lineWidth ?? 1.1,
+            'line-opacity': opacity,
+          },
+        } as any);
+        map.addLayer({
+          id: `nasmap-lyr-${layer.id}-point`,
+          type: 'circle',
+          source: sourceId,
+          'source-layer': sourceLayer,
+          filter: ['==', ['geometry-type'], 'Point'],
+          layout: { visibility: vis },
+          paint: {
+            'circle-color': vs.color || '#7c3aed',
+            'circle-radius': vs.circleRadius ?? 4,
+            'circle-opacity': opacity,
+          },
+        } as any);
+        continue;
+      }
       if (layer.geometry_type === 'raster') {
-        const meta = layer.metadata || {};
         let tiles: string[];
         if (meta.wms) tiles = [wmsTileUrl(layer.id)];
         else tiles = [tileUrl(layer.id)];
@@ -368,7 +421,6 @@ export default function MapView(props: MapViewProps) {
           'line-opacity': opacity * baseOpacity,
         },
       } as any);
-      const meta = layer.metadata || {};
       const provider = meta.provider;
       const pointPaint: any = {
         'circle-radius': s.circleRadius ?? 6,

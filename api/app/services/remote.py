@@ -60,9 +60,12 @@ class FetchResult:
     checksum: str
 
 
-def validate_url(url: str, allow_private: bool | None = None) -> str:
-    if allow_private is None:
-        allow_private = settings.allow_private_url_imports
+def validate_url_syntax(url: str) -> tuple[str, str]:
+    """Validate scheme/host shape without resolving DNS.
+
+    Used when registering a URL template (for example ``{z}/{x}/{y}``) where a
+    DNS lookup would be premature. Every actual fetch still uses ``validate_url``.
+    """
     parsed = urlparse(url.strip())
     if parsed.scheme.lower() not in settings.allowed_schemes:
         raise UnsafeURLError(f"URL scheme '{parsed.scheme}' is not allowed")
@@ -73,6 +76,14 @@ def validate_url(url: str, allow_private: bool | None = None) -> str:
     host = parsed.hostname.lower().rstrip(".")
     if host in BLOCKED_HOSTNAMES:
         raise UnsafeURLError("Local and metadata hostnames are blocked")
+    return parsed.scheme, host
+
+
+def validate_url(url: str, allow_private: bool | None = None) -> str:
+    if allow_private is None:
+        allow_private = settings.allow_private_url_imports
+    parsed = urlparse(url.strip())
+    _, host = validate_url_syntax(url)
     try:
         literal = ipaddress.ip_address(host)
         if not allow_private:

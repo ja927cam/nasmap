@@ -159,6 +159,10 @@ export function tileUrl(layerId: string) {
   return `${API_BASE}/layers/${layerId}/tiles/{z}/{x}/{y}.png`;
 }
 
+export function vectorTileUrl(layerId: string) {
+  return `${API_BASE}/layers/${layerId}/vector-tiles/{z}/{x}/{y}.pbf`;
+}
+
 export function wmsTileUrl(layerId: string) {
   return `${API_BASE}/layers/${layerId}/wms?bbox={bbox-epsg-3857}&width=256&height=256&transparent=true`;
 }

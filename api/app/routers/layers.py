@@ -38,6 +38,7 @@ PROTECTED_METADATA_KEYS = {
     "raster_url",
     "wms",
     "xyz",
+    "vector_tiles",
     "provider",
     "total_bounds",
     "source_url",

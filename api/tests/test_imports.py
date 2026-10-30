@@ -204,7 +204,7 @@ async def test_create_xyz_overlay(admin_client):
         "/api/v1/overlays/xyz",
         json={
             "name": "Example raster",
-            "url_template": "https://example.com/{z}/{x}/{y}.png",
+            "url_template": "https://1.1.1.1/{z}/{x}/{y}.png",
             "attribution": "Example",
             "visibility": "private",
             "minzoom": 0,
@@ -215,7 +215,7 @@ async def test_create_xyz_overlay(admin_client):
     layer = response.json()
     assert layer["geometry_type"] == "raster"
     assert layer["metadata"]["provider"] == "xyz"
-    assert layer["metadata"]["xyz"]["url"] == "https://example.com/{z}/{x}/{y}.png"
+    assert layer["metadata"]["xyz"]["url"] == "https://1.1.1.1/{z}/{x}/{y}.png"
 
     fetched = await admin_client.get(f"/api/v1/layers/{layer['id']}")
     assert fetched.status_code == 200

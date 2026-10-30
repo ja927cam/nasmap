@@ -8,12 +8,13 @@ import JobProgress from '../components/JobProgress';
 import TesseraForm from '../components/TesseraForm';
 import { EmptyState, ErrorBox, Field, Spinner, formatDate } from '../components/ui';
 
-type Provider = 'xyz' | 'tilejson' | 'wms' | 'cog' | 'tessera';
+type Provider = 'xyz' | 'tilejson' | 'wms' | 'vectortile' | 'cog' | 'tessera';
 
 const providers: { id: Provider; label: string; hint: string }[] = [
   { id: 'xyz', label: 'XYZ / TMS', hint: 'Add any raster tile service with a {z}/{x}/{y} URL.' },
   { id: 'tilejson', label: 'TileJSON', hint: 'Use the raster tiles described by a TileJSON document.' },
   { id: 'wms', label: 'WMS', hint: 'Add an OGC Web Map Service layer.' },
+  { id: 'vectortile', label: 'Vector tiles', hint: 'Render vector PBF tiles from a TileJSON document.' },
   { id: 'cog', label: 'GeoTIFF / COG', hint: 'Download a remote GeoTIFF or COG as a raster layer.' },
   { id: 'tessera', label: 'Tessera', hint: 'Import GeoTessera satellite embeddings.' },
 ];
@@ -60,7 +61,8 @@ export default function OverlaysPage() {
       setOverlays(
         data.items.filter(
           (layer) =>
-            layer.geometry_type === 'raster' &&
+            (layer.geometry_type === 'raster' ||
+              layer.metadata?.provider === 'vectortile') &&
             (layer.source_type === 'tessera' || layer.source_type === 'url'),
         ),
       );
@@ -300,6 +302,8 @@ function AddOverlayForm({
   const [wmsTransparent, setWmsTransparent] = useState(true);
   const [wmsOptions, setWmsOptions] = useState<{ name: string; title: string }[]>([]);
   const [wmsLoading, setWmsLoading] = useState(false);
+  const [sourceLayer, setSourceLayer] = useState('');
+  const [vectorColor, setVectorColor] = useState('#7c3aed');
   const [attribution, setAttribution] = useState('');
   const [licence, setLicence] = useState('');
   const [visibility, setVisibility] = useState<'private' | 'organisation' | 'public'>('private');
@@ -354,6 +358,22 @@ function AddOverlayForm({
           method: 'POST',
           body: { name, tilejson_url: url, attribution, licence, visibility, bounds },
         });
+      } else if (provider === 'vectortile') {
+        layer = await api<Layer>('/overlays/vectortile', {
+          method: 'POST',
+          body: {
+            name,
+            tilejson_url: url,
+            source_layer: sourceLayer,
+            color: vectorColor,
+            minzoom,
+            maxzoom,
+            attribution,
+            licence,
+            visibility,
+            bounds,
+          },
+        });
       } else {
         layer = await api<Layer>('/overlays/wms', {
           method: 'POST',
@@ -402,7 +422,7 @@ function AddOverlayForm({
         label={
           provider === 'wms'
             ? 'WMS endpoint'
-            : provider === 'tilejson'
+            : provider === 'tilejson' || provider === 'vectortile'
               ? 'TileJSON URL'
               : provider === 'cog'
                 ? 'GeoTIFF / COG URL'
@@ -420,8 +440,8 @@ function AddOverlayForm({
         hint={
           provider === 'xyz'
             ? 'Example: https://tiles.example.org/{z}/{x}/{y}.png'
-            : provider === 'tilejson'
-              ? 'URL of a TileJSON document'
+            : provider === 'tilejson' || provider === 'vectortile'
+              ? 'URL of a TileJSON document describing the tiles'
               : provider === 'cog'
                 ? 'The file is downloaded and converted to a COG in the background.'
                 : 'Base GetMap endpoint without parameters'
@@ -436,7 +456,7 @@ function AddOverlayForm({
           placeholder={
             provider === 'xyz'
               ? 'https://tiles.example.org/{z}/{x}/{y}.png'
-              : provider === 'tilejson'
+              : provider === 'tilejson' || provider === 'vectortile'
                 ? 'https://example.org/tiles.json'
                 : provider === 'cog'
                   ? 'https://example.org/elevation.tif'
@@ -515,20 +535,35 @@ function AddOverlayForm({
         </div>
       )}
 
-      {provider === 'xyz' && (
+      {provider === 'vectortile' && (
         <div className="grid-2">
-          <Field label="Tile size">
-            <select value={tileSize} onChange={(e) => setTileSize(Number(e.target.value))}>
-              <option value={256}>256 px</option>
-              <option value={512}>512 px</option>
-            </select>
+          <Field label="Source layer" hint="The vector_layers id inside the tiles.">
+            <input value={sourceLayer} onChange={(e) => setSourceLayer(e.target.value)} />
           </Field>
-          <Field label="Scheme">
-            <select value={scheme} onChange={(e) => setScheme(e.target.value as 'xyz' | 'tms')}>
-              <option value="xyz">XYZ</option>
-              <option value="tms">TMS</option>
-            </select>
+          <Field label="Colour">
+            <input type="color" value={vectorColor} onChange={(e) => setVectorColor(e.target.value)} />
           </Field>
+        </div>
+      )}
+
+      {(provider === 'xyz' || provider === 'vectortile') && (
+        <div className="grid-2">
+          {provider === 'xyz' && (
+            <Field label="Tile size">
+              <select value={tileSize} onChange={(e) => setTileSize(Number(e.target.value))}>
+                <option value={256}>256 px</option>
+                <option value={512}>512 px</option>
+              </select>
+            </Field>
+          )}
+          {provider === 'xyz' && (
+            <Field label="Scheme">
+              <select value={scheme} onChange={(e) => setScheme(e.target.value as 'xyz' | 'tms')}>
+                <option value="xyz">XYZ</option>
+                <option value="tms">TMS</option>
+              </select>
+            </Field>
+          )}
           <Field label="Minimum zoom">
             <input
               type="number"

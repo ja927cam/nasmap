@@ -166,6 +166,14 @@ class WMSCapabilitiesIn(BaseModel):
     url: str = Field(min_length=8, max_length=4000)
 
 
+class VectorTileOverlayIn(OverlayBase):
+    tilejson_url: str = Field(min_length=8, max_length=4000)
+    source_layer: str = Field(default="", max_length=200)
+    color: str = Field(default="#7c3aed", max_length=20)
+    minzoom: int = Field(default=0, ge=0, le=22)
+    maxzoom: int = Field(default=14, ge=0, le=22)
+
+
 class WMSOverlayIn(OverlayBase):
     url: str = Field(min_length=8, max_length=4000)
     layers: str = Field(min_length=1, max_length=1000)
@@ -184,7 +192,7 @@ def _validate_template(template: str) -> str:
     probe = template.replace("{z}", "0").replace("{x}", "0").replace("{y}", "0")
     probe = probe.replace("{s}", "a")
     try:
-        remote.validate_url(probe)
+        remote.validate_url_syntax(probe)
     except remote.UnsafeURLError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     return template
@@ -324,6 +332,75 @@ async def create_tilejson(
         payload.attribution or str(document.get("attribution") or ""),
         payload.licence,
         metadata,
+    )
+    return await _save(db, layer, request, user)
+
+
+@router.post("/vectortile", status_code=201)
+async def create_vectortile(
+    payload: VectorTileOverlayIn,
+    request: Request,
+    user: EditorUser,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    try:
+        remote.validate_url(payload.tilejson_url)
+    except remote.UnsafeURLError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    try:
+        with tempfile.TemporaryDirectory(prefix="nasmap-vector-tilejson-") as tmp:
+            fetched = await remote.fetch_remote_to_file(payload.tilejson_url, Path(tmp), max_mb=5)
+            document = json.loads(fetched.path.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"Could not read TileJSON: {exc}") from exc
+    tiles = document.get("tiles") or []
+    if not tiles or not isinstance(tiles[0], str):
+        raise HTTPException(status_code=422, detail="TileJSON does not contain a tile URL")
+    template = _validate_template(str(httpx.URL(payload.tilejson_url).join(tiles[0])))
+    source_layer = payload.source_layer
+    if not source_layer:
+        vector_layers = document.get("vector_layers") or []
+        source_layer = str(vector_layers[0].get("id")) if vector_layers else ""
+    if not source_layer:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "Vector TileJSON needs a source layer; add one manually if the "
+                "document does not list it"
+            ),
+        )
+    bounds = document.get("bounds")
+    if bounds and (not isinstance(bounds, list) or len(bounds) != 4):
+        bounds = None
+    metadata = {
+        "provider": "vectortile",
+        "source_url": payload.tilejson_url,
+        "total_bounds": _bounds(bounds if bounds else payload.bounds),
+        "vector_tiles": {
+            "url": template,
+            "source_layer": source_layer,
+            "minzoom": int(document.get("minzoom") or payload.minzoom),
+            "maxzoom": int(document.get("maxzoom") or payload.maxzoom),
+            "tilejson_url": payload.tilejson_url,
+        },
+    }
+    layer = Layer(
+        owner_id=user.id,
+        name=payload.name,
+        description="Vector tile overlay.",
+        visibility=payload.visibility,
+        geometry_type="geometry",
+        source_type="url",
+        style={
+            "color": payload.color,
+            "fillColor": payload.color,
+            "fillOpacity": 0.16,
+            "lineWidth": 1.1,
+            "circleRadius": 4,
+        },
+        metadata_=metadata,
+        attribution=payload.attribution,
+        licence=payload.licence,
     )
     return await _save(db, layer, request, user)
 

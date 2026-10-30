@@ -5,10 +5,10 @@ from app.routers import overlays
 
 
 def test_xyz_template_validation():
-    template = "https://example.com/{z}/{x}/{y}.png"
+    template = "https://1.1.1.1/{z}/{x}/{y}.png"
     assert overlays._validate_template(template) == template
     with pytest.raises(HTTPException):
-        overlays._validate_template("https://example.com/tiles.png")
+        overlays._validate_template("https://1.1.1.1/tiles.png")
     with pytest.raises(HTTPException):
         overlays._validate_template("file:///tmp/{z}/{x}/{y}.png")
 

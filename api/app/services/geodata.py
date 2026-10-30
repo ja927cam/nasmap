@@ -71,7 +71,8 @@ def detect_kind(filename: str) -> str:
         return RASTER_EXTENSIONS[suffix]
     raise UnsupportedFormatError(
         f"Unsupported file type '{suffix or 'unknown'}'. "
-        "Supported: GeoJSON, GeoPackage, Shapefile ZIP, KML, KMZ, GPX, CSV, GeoTIFF/COG."
+        "Supported: GeoJSON, GeoPackage, Shapefile ZIP, KML, KMZ, GPX, CSV, "
+        "FlatGeobuf, GeoParquet, GML, DXF, GeoTIFF/COG."
     )
 
 
