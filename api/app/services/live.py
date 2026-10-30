@@ -53,7 +53,7 @@ def wmo_description(code: int | None) -> str:
         96: "Thunderstorm with hail",
         99: "Thunderstorm with heavy hail",
     }
-    return values.get(int(code or -1), "Unknown")
+    return values.get(int(code) if code is not None else -1, "Unknown")
 
 
 async def rainviewer_frame(force: bool = False) -> tuple[str, str]:

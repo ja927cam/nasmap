@@ -57,6 +57,33 @@ export default function DashboardPage() {
         </div>
       </header>
 
+      {layerTotal === 0 && (
+        <section className="onboarding">
+          <div>
+            <h2>Start here</h2>
+            <p className="muted">
+              Strata is empty. Create a layer to start drawing, or import data you already have.
+            </p>
+          </div>
+          <div className="onboarding-actions">
+            {(user?.role === 'admin' || user?.role === 'editor') && (
+              <button className="btn btn-secondary" onClick={() => setBlankOpen(true)}>
+                <Icon name="plus" size={15} />
+                Blank layer
+              </button>
+            )}
+            <Link className="btn btn-primary" to="/map?new=upload">
+              <Icon name="upload" size={15} />
+              Import data
+            </Link>
+            <Link className="btn btn-ghost" to="/help">
+              <Icon name="help" size={15} />
+              Read help
+            </Link>
+          </div>
+        </section>
+      )}
+
       <section className="stat-grid">
         <div className="stat-card">
           <span>Layers</span>

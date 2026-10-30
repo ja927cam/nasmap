@@ -43,3 +43,6 @@ npm-debug.log*
 
 # Caddy / TLS runtime
 caddy_data/
+
+# TypeScript build info
+*.tsbuildinfo
