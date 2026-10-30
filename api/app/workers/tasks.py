@@ -597,10 +597,12 @@ async def _run_ingest_photos(db, job: ImportJob, options: dict[str, Any]) -> dic
             layer_name,
             options.get("visibility", "private"),
         )
-    job.layer_id = target_layer.id
-    job.progress = 45
-    job.message = f"Importing {len(incoming)} geotagged photos"
-    sync_db.update_job(str(job.id), progress=45, message=job.message)
+    await _set_job(
+        db,
+        job,
+        progress=45,
+        message=f"Importing {len(incoming)} geotagged photos",
+    )
 
     try:
         summary = await photo_ingest.attach_photo_metadata(
@@ -622,6 +624,7 @@ async def _run_ingest_photos(db, job: ImportJob, options: dict[str, Any]) -> dic
     except photo_ingest.PhotoIngestCancelled as exc:
         raise JobCancelled("Import cancelled by user") from exc
 
+    job.layer_id = target_layer.id
     return {
         "layer_id": str(target_layer.id),
         "layer_name": target_layer.name,
