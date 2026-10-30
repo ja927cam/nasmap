@@ -1,0 +1,21 @@
+# Production overlay: use with
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# It removes published database/redis ports (they were never published),
+# enables restart policies, and caps container logs.
+services:
+  db:
+    logging: &logging
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+  redis:
+    logging: *logging
+  api:
+    logging: *logging
+  worker:
+    logging: *logging
+  web:
+    logging: *logging
+  tileserver:
+    logging: *logging
+  caddy:
+    logging: *logging

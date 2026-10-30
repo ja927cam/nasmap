@@ -1,0 +1,85 @@
+{
+  "version": 8,
+  "name": "NasMap local OSM",
+  "sources": {
+    "nasmap": {
+      "type": "vector",
+      "url": "mbtiles://{nasmap}"
+    }
+  },
+  "layers": [
+    { "id": "background", "type": "background", "paint": { "background-color": "#e8edf1" } },
+    {
+      "id": "water",
+      "type": "fill",
+      "source": "nasmap",
+      "source-layer": "water",
+      "paint": { "fill-color": "#a5c9e8" }
+    },
+    {
+      "id": "landcover",
+      "type": "fill",
+      "source": "nasmap",
+      "source-layer": "landcover",
+      "paint": { "fill-color": "#dcebd5", "fill-opacity": 0.7 }
+    },
+    {
+      "id": "landuse",
+      "type": "fill",
+      "source": "nasmap",
+      "source-layer": "landuse",
+      "paint": { "fill-color": "#e6e8df", "fill-opacity": 0.6 }
+    },
+    {
+      "id": "park",
+      "type": "fill",
+      "source": "nasmap",
+      "source-layer": "park",
+      "paint": { "fill-color": "#cfe8c4", "fill-opacity": 0.8 }
+    },
+    {
+      "id": "waterway",
+      "type": "line",
+      "source": "nasmap",
+      "source-layer": "waterway",
+      "paint": { "line-color": "#8db8dc", "line-width": 1 }
+    },
+    {
+      "id": "transportation",
+      "type": "line",
+      "source": "nasmap",
+      "source-layer": "transportation",
+      "paint": {
+        "line-color": "#ffffff",
+        "line-width": ["interpolate", ["linear"], ["zoom"], 5, 0.5, 12, 2, 16, 5],
+        "line-opacity": 0.9
+      }
+    },
+    {
+      "id": "transportation-casing",
+      "type": "line",
+      "source": "nasmap",
+      "source-layer": "transportation",
+      "paint": {
+        "line-color": "#cbd5e1",
+        "line-width": ["interpolate", ["linear"], ["zoom"], 5, 1, 12, 3, 16, 7],
+        "line-opacity": 0.5
+      }
+    },
+    {
+      "id": "boundary",
+      "type": "line",
+      "source": "nasmap",
+      "source-layer": "boundary",
+      "paint": { "line-color": "#94a3b8", "line-width": 1, "line-dasharray": [3, 2] }
+    },
+    {
+      "id": "building",
+      "type": "fill",
+      "source": "nasmap",
+      "source-layer": "building",
+      "minzoom": 14,
+      "paint": { "fill-color": "#d6d3cd", "fill-opacity": 0.65 }
+    }
+  ]
+}

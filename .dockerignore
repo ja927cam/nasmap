@@ -1,0 +1,15 @@
+.git
+.github
+.env
+backups
+data
+db/init/*.md
+docs
+scripts
+tiles
+web
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.ruff_cache
+**/.venv

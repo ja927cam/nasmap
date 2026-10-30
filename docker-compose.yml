@@ -1,0 +1,267 @@
+name: nasmap
+
+x-api-env: &api-env
+  APP_NAME: ${APP_NAME:-NasMap}
+  PUID: ${PUID:-1000}
+  PGID: ${PGID:-1000}
+  DEBUG: ${DEBUG:-false}
+  DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://nasmap:nasmap@db:5432/nasmap}
+  REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+  SECRET_KEY: ${SECRET_KEY:-dev-only-change-me}
+  OSM_TOKEN_ENCRYPTION_KEY: ${OSM_TOKEN_ENCRYPTION_KEY:-}
+  SITE_URL: ${SITE_URL:-http://localhost}
+  FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+  CORS_ORIGINS: ${CORS_ORIGINS:-}
+  UPLOAD_DIR: ${UPLOAD_DIR:-/data/uploads}
+  TESSERA_CACHE_DIR: ${TESSERA_CACHE_DIR:-/data/tessera}
+  TILES_DIR: ${TILES_DIR:-/data/tiles}
+  MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-512}
+  MAX_PHOTO_MB: ${MAX_PHOTO_MB:-100}
+  INGEST_ENABLED: ${INGEST_ENABLED:-true}
+  INGEST_ROOTS: ${INGEST_ROOTS:-/ingest}
+  INGEST_MAX_SCAN_FILES: ${INGEST_MAX_SCAN_FILES:-1000}
+  INGEST_MAX_FILES_PER_JOB: ${INGEST_MAX_FILES_PER_JOB:-5000}
+  MAX_URL_IMPORT_MB: ${MAX_URL_IMPORT_MB:-1024}
+  URL_FETCH_TIMEOUT_SECONDS: ${URL_FETCH_TIMEOUT_SECONDS:-90}
+  ALLOWED_URL_SCHEMES: ${ALLOWED_URL_SCHEMES:-http,https}
+  ALLOW_PRIVATE_URL_IMPORTS: ${ALLOW_PRIVATE_URL_IMPORTS:-false}
+  ACCESS_TOKEN_TTL_MINUTES: ${ACCESS_TOKEN_TTL_MINUTES:-30}
+  REFRESH_TOKEN_TTL_DAYS: ${REFRESH_TOKEN_TTL_DAYS:-30}
+  COOKIE_SECURE: ${COOKIE_SECURE:-false}
+  COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
+  FIRST_USER_IS_ADMIN: ${FIRST_USER_IS_ADMIN:-true}
+  REGISTRATION_ENABLED: ${REGISTRATION_ENABLED:-true}
+  AUTH_RATE_LIMIT: ${AUTH_RATE_LIMIT:-10}
+  AUTH_RATE_WINDOW_SECONDS: ${AUTH_RATE_WINDOW_SECONDS:-60}
+  UPLOAD_RATE_LIMIT: ${UPLOAD_RATE_LIMIT:-30}
+  UPLOAD_RATE_WINDOW_SECONDS: ${UPLOAD_RATE_WINDOW_SECONDS:-3600}
+  BASEMAP_MODE: ${BASEMAP_MODE:-remote_osm}
+  OSM_TILE_URL: ${OSM_TILE_URL:-https://tile.openstreetmap.org/{z}/{x}/{y}.png}
+  OSM_TILE_ATTRIBUTION: ${OSM_TILE_ATTRIBUTION:-&copy; OpenStreetMap contributors}
+  OSM_TILE_PROXY: ${OSM_TILE_PROXY:-true}
+  OSM_TILE_CACHE_TTL_DAYS: ${OSM_TILE_CACHE_TTL_DAYS:-7}
+  OVERLAY_TILE_CACHE_TTL_HOURS: ${OVERLAY_TILE_CACHE_TTL_HOURS:-24}
+  TILESERVER_PUBLIC_URL: ${TILESERVER_PUBLIC_URL:-/tiles}
+  TILESERVER_INTERNAL_URL: ${TILESERVER_INTERNAL_URL:-http://tileserver:8080}
+  OSM_OAUTH_ENABLED: ${OSM_OAUTH_ENABLED:-false}
+  OSM_CLIENT_ID: ${OSM_CLIENT_ID:-}
+  OSM_CLIENT_SECRET: ${OSM_CLIENT_SECRET:-}
+  OSM_REDIRECT_URI: ${OSM_REDIRECT_URI:-http://localhost/api/v1/osm/callback}
+  OSM_API_BASE_URL: ${OSM_API_BASE_URL:-https://api.openstreetmap.org}
+  OSM_AUTH_URL: ${OSM_AUTH_URL:-https://www.openstreetmap.org/oauth2/authorize}
+  OSM_TOKEN_URL: ${OSM_TOKEN_URL:-https://www.openstreetmap.org/oauth2/token}
+  OSM_SCOPES: ${OSM_SCOPES:-read_prefs write_api}
+  OSM_SIGNIN_AUTO_CREATE: ${OSM_SIGNIN_AUTO_CREATE:-false}
+  OVERPASS_ENABLED: ${OVERPASS_ENABLED:-true}
+  OVERPASS_URL: ${OVERPASS_URL:-https://overpass-api.de/api/interpreter}
+  OVERPASS_TIMEOUT_SECONDS: ${OVERPASS_TIMEOUT_SECONDS:-90}
+  OVERPASS_MAX_AREA_DEG2: ${OVERPASS_MAX_AREA_DEG2:-0.05}
+  OVERPASS_MAX_MB: ${OVERPASS_MAX_MB:-64}
+  TESSERA_ENABLED: ${TESSERA_ENABLED:-true}
+  TESSERA_VERSION: ${TESSERA_VERSION:-v1.1}
+  TESSERA_VARIANT: ${TESSERA_VARIANT:-cambridge}
+  TESSERA_REGISTRY_URL: ${TESSERA_REGISTRY_URL:-}
+  TESSERA_MAX_TILES: ${TESSERA_MAX_TILES:-64}
+  NOMINATIM_URL: ${NOMINATIM_URL:-https://nominatim.openstreetmap.org}
+  GEOCODING_ENABLED: ${GEOCODING_ENABLED:-true}
+  ENV: ${ENV:-production}
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  JSON_LOGS: ${JSON_LOGS:-true}
+  RATE_LIMITING_ENABLED: ${RATE_LIMITING_ENABLED:-true}
+
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-nasmap}
+      POSTGRES_USER: ${POSTGRES_USER:-nasmap}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nasmap}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nasmap} -d ${POSTGRES_DB:-nasmap}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks: [nasmap]
+
+  # Isolated database for `make test`; never mounted to the production data.
+  db-test:
+    image: postgis/postgis:16-3.4
+    profiles: ["test"]
+    environment:
+      POSTGRES_DB: nasmap_test
+      POSTGRES_USER: nasmap
+      POSTGRES_PASSWORD: nasmap
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nasmap -d nasmap_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    networks: [nasmap]
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--save", "60", "1"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    networks: [nasmap]
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    restart: unless-stopped
+    environment: *api-env
+    volumes:
+      - uploads:/data/uploads
+      - tessera_cache:/data/tessera
+      - tiles_data:/data/tiles
+      - type: bind
+        source: ${INGEST_PATH:-./data/ingest}
+        target: /ingest
+        read_only: true
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/api/v1/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks: [nasmap]
+
+  worker:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    restart: unless-stopped
+    stop_grace_period: 60s
+    command: ["python", "-m", "app.workers.runner"]
+    environment:
+      <<: *api-env
+      WORKER_HEALTH_FILE: /tmp/nasmap-worker-heartbeat
+    volumes:
+      - uploads:/data/uploads
+      - tessera_cache:/data/tessera
+      - tiles_data:/data/tiles
+      - type: bind
+        source: ${INGEST_PATH:-./data/ingest}
+        target: /ingest
+        read_only: true
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "/app/app/workers/healthcheck.py"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks: [nasmap]
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/ || nginx -t"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    networks: [nasmap]
+
+  tileserver:
+    image: maptiler/tileserver-gl:latest
+    restart: unless-stopped
+    command: ["--config", "/data/config.json"]
+    volumes:
+      - ./tiles:/data
+      - tiles_data:/data/tiles
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:8080/',r=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))\""]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks: [nasmap]
+
+  # One-shot OSM PBF importer. Enable with:
+  #   docker compose --profile osm run --rm osm-import -d nasmap -U nasmap \
+  #     -H db -P 5432 --slim --hstore --schema osm --prefix osm_ --create \
+  #     /data/cambridge-latest.osm.pbf
+  osm-import:
+    image: iboates/osm2pgsql:latest
+    profiles: ["osm"]
+    environment:
+      PGHOST: db
+      PGPORT: 5432
+      PGUSER: ${POSTGRES_USER:-nasmap}
+      PGDATABASE: ${POSTGRES_DB:-nasmap}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-nasmap}
+    volumes:
+      - ./data/osm:/data:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: ["osm2pgsql"]
+    command: ["--help"]
+    networks: [nasmap]
+
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-http://localhost}
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./reverse-proxy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "caddy", "version"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks: [nasmap]
+
+volumes:
+  db_data:
+  redis_data:
+  uploads:
+  tessera_cache:
+  tiles_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  nasmap:
+    driver: bridge

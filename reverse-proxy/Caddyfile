@@ -1,0 +1,50 @@
+# SITE_ADDRESS is set from .env. Use http://localhost for plain HTTP or a
+# hostname (maps.example.com) to obtain automatic HTTPS certificates.
+{$SITE_ADDRESS:http://localhost} {
+	encode zstd gzip
+
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options SAMEORIGIN
+		Referrer-Policy strict-origin-when-cross-origin
+		Permissions-Policy "geolocation=(self), camera=(), microphone=()"
+		-Server
+	}
+
+	handle /api/* {
+		reverse_proxy api:8000
+	}
+	handle /docs* {
+		reverse_proxy api:8000
+	}
+	handle /openapi.json {
+		reverse_proxy api:8000
+	}
+	handle /redoc* {
+		reverse_proxy api:8000
+	}
+	handle_path /tiles/* {
+		reverse_proxy tileserver:8080 {
+			header_up X-Forwarded-Path /tiles
+		}
+	}
+	# TileServer GL TileJSON/tiles and font assets when it emits root-relative
+	# URLs behind the /tiles subpath.
+	handle /data/* {
+		reverse_proxy tileserver:8080
+	}
+	handle /fonts/* {
+		reverse_proxy tileserver:8080
+	}
+	handle /sprites/* {
+		reverse_proxy tileserver:8080
+	}
+	handle {
+		reverse_proxy web:8080
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}

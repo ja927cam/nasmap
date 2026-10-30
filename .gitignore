@@ -1,0 +1,45 @@
+# Secrets and local configuration
+.env
+.env.local
+*.pem
+*.key
+
+# Runtime data
+data/*
+!data/ingest/
+data/ingest/*
+!data/ingest/.gitkeep
+backups/
+tiles/tiles/
+tiles/config.local.json
+*.pbf
+*.mbtiles
+*.pmtiles
+*.osm.pbf
+sample-data/*.tmp
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# Node
+node_modules/
+web/dist/
+web/.vite/
+npm-debug.log*
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Caddy / TLS runtime
+caddy_data/

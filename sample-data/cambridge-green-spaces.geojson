@@ -1,0 +1,42 @@
+{
+  "type": "FeatureCollection",
+  "name": "Cambridge green spaces",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Parker's Piece",
+        "type": "park",
+        "source": "Sample data"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [0.1261, 52.2022],
+          [0.1302, 52.2022],
+          [0.1302, 52.2041],
+          [0.1261, 52.2041],
+          [0.1261, 52.2022]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Christ's Pieces",
+        "type": "park",
+        "source": "Sample data"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [0.1228, 52.2064],
+          [0.1278, 52.2064],
+          [0.1278, 52.2090],
+          [0.1228, 52.2090],
+          [0.1228, 52.2064]
+        ]]
+      }
+    }
+  ]
+}

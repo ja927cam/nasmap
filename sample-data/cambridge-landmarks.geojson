@@ -1,0 +1,51 @@
+{
+  "type": "FeatureCollection",
+  "name": "Cambridge landmarks",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "King's College Chapel",
+        "category": "historic",
+        "source": "Sample data"
+      },
+      "geometry": { "type": "Point", "coordinates": [0.1166, 52.2049] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Market Square",
+        "category": "market",
+        "source": "Sample data"
+      },
+      "geometry": { "type": "Point", "coordinates": [0.1192, 52.2053] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Cambridge Railway Station",
+        "category": "transport",
+        "source": "Sample data"
+      },
+      "geometry": { "type": "Point", "coordinates": [0.1372, 52.1942] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Fitzwilliam Museum",
+        "category": "museum",
+        "source": "Sample data"
+      },
+      "geometry": { "type": "Point", "coordinates": [0.1199, 52.2004] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Castle Mound",
+        "category": "viewpoint",
+        "source": "Sample data"
+      },
+      "geometry": { "type": "Point", "coordinates": [0.1122, 52.2115] }
+    }
+  ]
+}
