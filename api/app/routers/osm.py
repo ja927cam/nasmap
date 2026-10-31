@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from datetime import UTC, datetime, timedelta
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -20,7 +20,9 @@ from ..config import settings
 from ..database import get_db
 from ..models import Feature, Layer, OAuthState, OsmPublication, User
 from ..permissions import get_layer_or_404, require_write
+from ..rate_limit import upload_rate_limit
 from ..services import osm as osm_service
+from ..services import overpass
 from .auth import set_refresh_cookie
 
 router = APIRouter(prefix="/osm", tags=["osm"])
@@ -32,12 +34,20 @@ class AuthorizeIn(BaseModel):
     redirect_to: str | None = Field(default=None, max_length=500)
 
 
+class NearbyIn(BaseModel):
+    feature_id: UUID
+    radius_m: int = Field(default=50, ge=5, le=200)
+
+
 class PreviewIn(BaseModel):
     feature_id: UUID
     comment: str = Field(min_length=3, max_length=255)
     source: str = Field(default="Strata", max_length=255)
     tags: dict[str, str] | None = None
     changeset_tags: dict[str, str] = Field(default_factory=dict)
+    osm_id: int | None = Field(default=None, gt=0)
+    osm_type: Literal["node"] | None = None
+    force_create: bool = False
 
 
 class PublishIn(PreviewIn):
@@ -61,34 +71,45 @@ async def _load_feature(
     return feature, layer, geometry, (lat, lon)
 
 
-def _prepare(
+async def _prepare(
     feature: Feature, payload: PreviewIn, geometry: dict[str, Any]
-) -> tuple[dict[str, str], str, str, int | None, int | None]:
-    tags = osm_service.clean_tags(feature.properties or {})
-    if payload.tags is not None:
-        tags.update({str(k): str(v) for k, v in payload.tags.items() if str(v).strip()})
-    tags = {k: v for k, v in tags.items() if v.strip()}
+) -> tuple[dict[str, str], str, str, int | None, int | None, dict[str, str], float, float]:
+    props = feature.properties or {}
+    osm_id: int | None = None
+    osm_version: int | None = None
+    existing_tags: dict[str, str] = {}
+    node: dict[str, Any] | None = None
+    if payload.osm_type not in (None, "node"):
+        raise HTTPException(status_code=422, detail="Only OSM nodes are supported")
+    if not payload.force_create:
+        if payload.osm_id:
+            osm_id = payload.osm_id
+        elif props.get("osm_id"):
+            try:
+                osm_id = int(props["osm_id"])
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=422, detail="Stored osm_id is invalid") from None
+    if osm_id:
+        node = await osm_service.fetch_node(osm_id)
+        if not node:
+            raise HTTPException(status_code=404, detail="OSM node no longer exists")
+        lat = float(node["lat"])
+        lon = float(node["lon"])
+        osm_version = int(node.get("version") or 1)
+        existing_tags = osm_service.clean_tags(node.get("tags") or {})
+    else:
+        lat, lon = osm_service.parse_lat_lon(geometry)
+    local_tags = osm_service.clean_tags(payload.tags if payload.tags is not None else props)
+    tags = osm_service.merge_tags(existing_tags, local_tags)
     if not tags:
         raise HTTPException(status_code=422, detail="At least one OSM tag is required")
-    lat, lon = osm_service.parse_lat_lon(geometry)
-    osm_id = None
-    osm_version = None
-    props = feature.properties or {}
-    if props.get("osm_id"):
-        try:
-            osm_id = int(props["osm_id"])
-            osm_version = int(props.get("osm_version") or 1)
-        except (TypeError, ValueError):
-            raise HTTPException(
-                status_code=422, detail="Stored osm_id/osm_version is invalid"
-            ) from None
     changeset_xml = osm_service.changeset_xml(
         payload.comment, payload.source, payload.changeset_tags
     )
     diff_xml = osm_service.osm_change_xml(
         lat=lat, lon=lon, tags=tags, osm_id=osm_id, osm_version=osm_version
     )
-    return tags, changeset_xml, diff_xml, osm_id, osm_version
+    return tags, changeset_xml, diff_xml, osm_id, osm_version, existing_tags, lat, lon
 
 
 @router.get("/status")
@@ -261,14 +282,34 @@ async def disconnect(
     return {"ok": True}
 
 
+@router.post("/nearby", dependencies=[Depends(upload_rate_limit)])
+async def nearby(
+    payload: NearbyIn,
+    user: CurrentUser,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    _, _, _, (lat, lon) = await _load_feature(db, payload.feature_id, user)
+    try:
+        nodes = await overpass.fetch_nearby_nodes(lat, lon, payload.radius_m)
+    except overpass.OverpassError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    return {
+        "feature_id": str(payload.feature_id),
+        "radius_m": payload.radius_m,
+        "nodes": nodes,
+    }
+
+
 @router.post("/preview")
 async def preview(
     payload: PreviewIn,
     user: CurrentUser,
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    feature, layer, geometry, (lat, lon) = await _load_feature(db, payload.feature_id, user)
-    tags, changeset_xml, diff_xml, osm_id, osm_version = _prepare(feature, payload, geometry)
+    feature, layer, geometry, _ = await _load_feature(db, payload.feature_id, user)
+    tags, changeset_xml, diff_xml, osm_id, osm_version, existing_tags, lat, lon = await _prepare(
+        feature, payload, geometry
+    )
     return {
         "feature_id": str(feature.id),
         "layer_id": str(layer.id),
@@ -279,6 +320,7 @@ async def preview(
         "lat": lat,
         "lon": lon,
         "tags": tags,
+        "existing_tags": existing_tags,
         "comment": payload.comment,
         "source": payload.source,
         "changeset_xml": changeset_xml,
@@ -287,7 +329,10 @@ async def preview(
             "This will create a new OpenStreetMap node. Review tags carefully; "
             "uploads are permanent public edits."
             if not osm_id
-            else "This will modify an existing OpenStreetMap node."
+            else (
+                f"This will update existing OpenStreetMap node {osm_id}. Existing "
+                "OSM tags are kept, the node is not moved, and uploads are permanent."
+            )
         ),
     }
 
@@ -299,8 +344,10 @@ async def publish(
     user: CurrentUser,
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    feature, layer, geometry, (lat, lon) = await _load_feature(db, payload.feature_id, user)
-    tags, changeset_xml, diff_xml, osm_id, osm_version = _prepare(feature, payload, geometry)
+    feature, layer, geometry, _ = await _load_feature(db, payload.feature_id, user)
+    tags, changeset_xml, diff_xml, osm_id, osm_version, _, lat, lon = await _prepare(
+        feature, payload, geometry
+    )
     publication = OsmPublication(
         user_id=user.id,
         feature_id=feature.id,
@@ -330,6 +377,7 @@ async def publish(
             "changeset_xml": changeset_xml,
             "diff_xml": diff_xml,
             "tags": tags,
+            "osm_id": osm_id,
             "message": "Dry run only - nothing was sent to OpenStreetMap.",
         }
 
@@ -368,17 +416,19 @@ async def publish(
         publication.response = result
         publication.finished_at = datetime.now(UTC)
         new_nodes = result.get("nodes") or []
-        if new_nodes:
-            node = new_nodes[0]
+        node = new_nodes[0] if new_nodes else {}
+        resolved_id = int(node.get("new_id") or node.get("old_id") or osm_id or 0)
+        resolved_version = int(node.get("new_version") or osm_version or 0)
+        if resolved_id:
             feature.properties = {
                 **(feature.properties or {}),
                 "osm_type": "node",
-                "osm_id": int(node.get("new_id") or osm_id or 0),
-                "osm_version": int(node.get("new_version") or 1),
+                "osm_id": resolved_id,
+                **({"osm_version": resolved_version} if resolved_version else {}),
                 "osm_changeset": changeset_id,
             }
-            publication.osm_type = "node"
-            publication.osm_id = feature.properties["osm_id"]
+        publication.osm_type = "node"
+        publication.osm_id = resolved_id or osm_id
         feature.updated_by = user.id
         audit(
             db,

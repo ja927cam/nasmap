@@ -190,22 +190,30 @@ Use throwaway dev accounts.
 
 ## Publishing a feature
 
-Publishing supports **point nodes** in this release, creating a new node or
-modifying one whose properties contain `osm_id` and `osm_version`.
+Publishing supports **point nodes** in this release. You can create a new node,
+or attach a Strata point to an existing OSM node and update its tags.
 
 UI flow:
 
 1. Select a point feature in an editable layer.
-2. **Publish to OSM**.
-3. Review the action, coordinates, tags, changeset comment and source.
-4. Press **Dry run** to see the exact OsmChange XML without uploading.
-5. Tick “I have reviewed…” and press **Confirm and publish**.
+2. **Attach / publish to OSM**.
+3. To attach to an existing OSM point, choose a search radius and press
+   **Find nearby OSM points**. Select the matching OSM node.
+4. Review the merged tags, coordinates, changeset comment and source. Existing
+   OSM tags are preserved and the OSM node keeps its current position.
+5. Press **Dry run** to see the exact OsmChange XML without uploading.
+6. Tick “I have reviewed…” and press **Confirm and publish**.
+
+Photos and other files remain attached to the Strata feature. OpenStreetMap
+does not host image files; to show a photo on OSM, add an `image` tag with a
+publicly reachable URL (for example a Wikimedia Commons or Mapillary URL).
 
 The API performs:
 
-1. `POST /api/v1/osm/preview` — builds and returns the changeset XML and
-   OsmChange diff; no network write.
-2. `POST /api/v1/osm/publish` with `dry_run: true` — same, explicitly no write.
+1. `POST /api/v1/osm/nearby` — finds tagged OSM nodes around the feature.
+2. `POST /api/v1/osm/preview` — builds merged tags, changeset XML and OsmChange
+   diff; no network write.
+3. `POST /api/v1/osm/publish` with `dry_run: true` — same, explicitly no write.
 3. `POST /api/v1/osm/publish` with `confirm: true`:
    - creates a changeset (`PUT /api/0.6/changeset/create`);
    - uploads the OsmChange diff (`POST /api/0.6/changeset/{id}/upload`);
@@ -222,7 +230,10 @@ changeset and records the error in `app.osm_publications`.
 - OSM edits are public and permanent. Strata requires an explicit confirmation
   checkbox and a non-empty changeset comment.
 - Only tags the user reviewed are sent. Internal properties (`_nasmap*`,
-  `osm_*`, `geometry_wkt`) are excluded.
+  `osm_*`, `photo_*`, `exif_*`, `camera_*`, `geometry_wkt`) are excluded.
+- When updating an existing node, current OSM tags are fetched and kept.
+  Deleting existing tags is not supported in this version; edit values or add
+  new tags.
 - Do not upload data that violates OSM’s licence or community guidelines.
 - Use the dev server before testing against production OSM.
 

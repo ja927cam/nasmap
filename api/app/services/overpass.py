@@ -7,6 +7,7 @@ written back to OpenStreetMap.
 from __future__ import annotations
 
 import logging
+import math
 from typing import Any
 
 import httpx
@@ -57,14 +58,13 @@ def build_query(bbox: tuple[float, float, float, float], category: str) -> str:
     )
 
 
-async def fetch_elements(bbox: tuple[float, float, float, float], category: str) -> dict[str, Any]:
+async def _post_query(query: str) -> dict[str, Any]:
     if not settings.overpass_enabled:
         raise OverpassError("OSM data import is disabled")
     try:
         remote.validate_url(settings.overpass_url)
     except remote.UnsafeURLError as exc:
         raise OverpassError(str(exc)) from exc
-    query = build_query(bbox, category)
     try:
         async with httpx.AsyncClient(
             timeout=httpx.Timeout(settings.overpass_timeout_seconds + 15),
@@ -85,6 +85,66 @@ async def fetch_elements(bbox: tuple[float, float, float, float], category: str)
     if payload.get("remark") and not payload.get("elements"):
         raise OverpassError(str(payload.get("remark")))
     return payload
+
+
+async def fetch_elements(bbox: tuple[float, float, float, float], category: str) -> dict[str, Any]:
+    return await _post_query(build_query(bbox, category))
+
+
+def build_nearby_query(lat: float, lon: float, radius_m: int) -> str:
+    radius = max(1, min(int(radius_m), 500))
+    timeout = max(10, min(settings.overpass_timeout_seconds, 30))
+    return (
+        f"[out:json][timeout:{timeout}];\nnode(around:{radius},{lat:.7f},{lon:.7f});\nout body 200;"
+    )
+
+
+def _distance_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    radius = 6_371_008.8
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lon2 - lon1)
+    value = math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
+    return 2 * radius * math.asin(math.sqrt(value))
+
+
+def parse_nearby_nodes(
+    payload: dict[str, Any], lat: float, lon: float, limit: int = 25
+) -> list[dict[str, Any]]:
+    nodes: list[dict[str, Any]] = []
+    for element in payload.get("elements") or []:
+        if element.get("type") != "node":
+            continue
+        tags = {str(k): str(v) for k, v in (element.get("tags") or {}).items()}
+        if not tags or element.get("lat") is None or element.get("lon") is None:
+            continue
+        node_lat = float(element["lat"])
+        node_lon = float(element["lon"])
+        nodes.append(
+            {
+                "osm_id": int(element["id"]),
+                "osm_version": int(element.get("version") or 1),
+                "lat": node_lat,
+                "lon": node_lon,
+                "distance_m": round(_distance_m(lat, lon, node_lat, node_lon), 1),
+                "tags": tags,
+                "name": tags.get("name")
+                or tags.get("brand")
+                or tags.get("operator")
+                or tags.get("amenity")
+                or tags.get("shop")
+                or tags.get("tourism"),
+                "timestamp": element.get("timestamp"),
+            }
+        )
+    nodes.sort(key=lambda item: item["distance_m"])
+    return nodes[:limit]
+
+
+async def fetch_nearby_nodes(lat: float, lon: float, radius_m: int = 50) -> list[dict[str, Any]]:
+    payload = await _post_query(build_nearby_query(lat, lon, radius_m))
+    return parse_nearby_nodes(payload, lat, lon)
 
 
 def _coords(geometry: list[dict[str, float]] | None) -> list[tuple[float, float]]:

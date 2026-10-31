@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import math
 import secrets
 import xml.etree.ElementTree as ET
 from datetime import UTC, datetime, timedelta
@@ -20,7 +21,7 @@ from ..models import User
 
 logger = logging.getLogger("nasmap.osm")
 
-INTERNAL_PROPERTY_PREFIXES = ("_nasmap", "osm_")
+INTERNAL_PROPERTY_PREFIXES = ("_nasmap", "osm_", "photo_", "exif_", "camera_")
 INTERNAL_PROPERTIES = {"geometry_wkt", "created_by", "updated_at"}
 
 
@@ -180,6 +181,23 @@ async def valid_access_token(db: AsyncSession, user: User) -> str:
     return access
 
 
+def merge_tags(*groups: dict[str, Any] | None) -> dict[str, str]:
+    merged: dict[str, str] = {}
+    for group in groups:
+        merged.update(clean_tags(group or {}))
+    return merged
+
+
+def haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    radius = 6_371_008.8
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lon2 - lon1)
+    value = math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
+    return 2 * radius * math.asin(math.sqrt(value))
+
+
 def clean_tags(properties: dict[str, Any]) -> dict[str, str]:
     tags: dict[str, str] = {}
     for key, value in (properties or {}).items():
@@ -233,11 +251,17 @@ def osm_change_xml(
     return f'<osmChange version="0.6" generator="Strata"><create>{node}</create></osmChange>'
 
 
-async def fetch_node_version(access_token: str, osm_id: int) -> dict[str, Any] | None:
+async def fetch_node(osm_id: int, access_token: str | None = None) -> dict[str, Any] | None:
+    headers = {
+        "Accept": "application/json",
+        "User-Agent": "Strata/1.0 (self-hosted OpenStreetMap client)",
+    }
+    if access_token:
+        headers["Authorization"] = f"Bearer {access_token}"
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.get(
             f"{settings.osm_api_base_url}/api/0.6/node/{osm_id}.json",
-            headers={"Authorization": f"Bearer {access_token}"},
+            headers=headers,
         )
     if response.status_code == 404:
         return None
@@ -245,6 +269,10 @@ async def fetch_node_version(access_token: str, osm_id: int) -> dict[str, Any] |
         raise OSMError(f"Could not fetch OSM node {osm_id}: HTTP {response.status_code}")
     elements = response.json().get("elements", [])
     return elements[0] if elements else None
+
+
+async def fetch_node_version(access_token: str, osm_id: int) -> dict[str, Any] | None:
+    return await fetch_node(osm_id, access_token)
 
 
 async def create_changeset(access_token: str, xml: str) -> int:

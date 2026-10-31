@@ -111,6 +111,24 @@ export default function HelpPage() {
       </section>
 
       <section className="panel">
+        <h2>Publishing to OpenStreetMap</h2>
+        <ol className="help-steps">
+          <li>
+            Connect your OSM account in <Link to="/settings">Settings</Link>, select a point on
+            the map and choose <em>Attach / publish to OSM</em>.
+          </li>
+          <li>
+            Use <em>Find nearby OSM points</em> to attach your data to an existing OSM node
+            instead of creating a duplicate. Existing OSM tags are kept.
+          </li>
+          <li>
+            Review the tags, run a dry run, then confirm. Photos stay attached here; OSM stores
+            text tags only, so use an <code>image</code> tag for a public photo URL.
+          </li>
+        </ol>
+      </section>
+
+      <section className="panel">
         <h2>Common problems</h2>
         <dl className="help-kv">
           <dt>A photo was skipped</dt>

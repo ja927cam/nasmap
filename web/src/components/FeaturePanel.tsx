@@ -275,7 +275,7 @@ export default function FeaturePanel({
           </button>
           {feature.geometry?.type === 'Point' && (
             <button className="btn btn-secondary btn-sm" onClick={onOsm}>
-              Publish to OSM
+              Attach / publish to OSM
             </button>
           )}
         </div>

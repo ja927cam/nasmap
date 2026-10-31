@@ -39,7 +39,7 @@ TileServer GL and Caddy.
 - Live layers for RainViewer weather radar, Open-Meteo weather points and USGS
   earthquakes.
 - OSM OAuth 2.0 sign-in/linking and a preview/confirm/dry-run workflow that
-  publishes a single point feature to a changeset.
+  publishes a point feature or attaches its tags to a nearby existing OSM node.
 - MapLibre UI: layer panel, styling, attribute table, drawing, vertex editing,
   measurement, search, viewport filtering, basemap switcher, exports.
 - Caddy automatic HTTPS when you supply a domain, structured JSON logs, audit

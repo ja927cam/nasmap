@@ -3186,3 +3186,129 @@ kbd {
   color: var(--muted);
   font-size: 11.5px;
 }
+
+.osm-match {
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+.osm-match-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.osm-match-head h3 {
+  margin-bottom: 3px;
+  font-size: 13px;
+}
+
+.osm-match-head .hint {
+  max-width: 560px;
+}
+
+.osm-search-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+.osm-search-row select {
+  width: 132px;
+}
+
+.osm-nodes {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 220px;
+  margin-top: 8px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface);
+}
+
+.osm-node {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 9px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.osm-node:first-child {
+  border-top: 0;
+}
+
+.osm-node:hover {
+  background: var(--surface-2);
+}
+
+.osm-node.selected {
+  background: var(--accent-soft);
+  box-shadow: inset 2px 0 var(--accent);
+}
+
+.osm-node-main {
+  display: block;
+  min-width: 0;
+}
+
+.osm-node-main strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.osm-node-main small {
+  display: block;
+  color: var(--muted);
+  font-size: 10.5px;
+}
+
+.osm-node-tags {
+  max-width: 46%;
+  overflow: hidden;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.osm-selected {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 8px 9px;
+  border: 1px solid var(--accent-border);
+  border-radius: 5px;
+  background: var(--accent-soft);
+}
+
+.osm-selected strong {
+  display: block;
+  font-size: 12px;
+}
+
+.osm-selected small {
+  display: block;
+  color: var(--muted);
+  font-size: 10.5px;
+}
