@@ -44,30 +44,38 @@ export default function AttributeTable({
           aria-label="Filter table rows"
         />
       </div>
-      <div className="table-scroll">
-        <table>
-          <thead>
-            <tr>
-              {columns.map((column) => (
-                <th key={column}>{column}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {current.map((feature) => (
-              <tr
-                key={feature.id}
-                className={activeId === feature.id ? 'selected' : ''}
-                onClick={() => onSelect(feature)}
-              >
+      {filtered.length === 0 ? (
+        <div className="table-empty">
+          {query
+            ? `No features match “${query}”.`
+            : 'No features here yet. Draw one on the map, or import data into this layer.'}
+        </div>
+      ) : (
+        <div className="table-scroll">
+          <table>
+            <thead>
+              <tr>
                 {columns.map((column) => (
-                  <td key={column}>{formatValue(feature.properties?.[column])}</td>
+                  <th key={column}>{column}</th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {current.map((feature) => (
+                <tr
+                  key={feature.id}
+                  className={activeId === feature.id ? 'selected' : ''}
+                  onClick={() => onSelect(feature)}
+                >
+                  {columns.map((column) => (
+                    <td key={column}>{formatValue(feature.properties?.[column])}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       <div className="table-footer">
         <span className="muted">
           {filtered.length.toLocaleString()} of {features.length.toLocaleString()} feature

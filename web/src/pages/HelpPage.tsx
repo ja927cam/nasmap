@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 export default function HelpPage() {
   return (
     <div className="page narrow">
@@ -8,16 +10,36 @@ export default function HelpPage() {
         </div>
       </header>
 
+      <section className="help-quick" aria-label="Quick actions">
+        <Link to="/map?new=upload" className="help-quick-card">
+          <strong>Import data</strong>
+          <span>A file, URL, folder, photos or OSM</span>
+        </Link>
+        <Link to="/map?new=manual" className="help-quick-card">
+          <strong>Draw a layer</strong>
+          <span>Create an empty layer and add features</span>
+        </Link>
+        <Link to="/live" className="help-quick-card">
+          <strong>Live data</strong>
+          <span>Weather and earthquakes</span>
+        </Link>
+        <Link to="/overlays" className="help-quick-card">
+          <strong>Add an overlay</strong>
+          <span>Reference maps and imagery</span>
+        </Link>
+      </section>
+
       <section className="panel">
         <h2>Basic workflow</h2>
         <ol className="help-steps">
           <li>
-            <strong>Create a layer.</strong> Use <em>Blank layer</em> for your own data, or
-            <em> Add data</em> to import a file, URL, folder, photos or OSM.
+            <strong>Create a layer.</strong> Use <em>New layer</em> to draw your own data, or
+            <em> Import</em> to bring in a file, URL, folder, photos or OSM.
           </li>
           <li>
-            <strong>Put it on the map.</strong> Choose the layer in the layer panel. Use the
-            toolbar to select, draw, edit vertices, measure, search or filter.
+            <strong>Put it on the map.</strong> Choose the layer in the layer panel. The
+            guidance bar tells you what you can do next. Use the toolbar to select, draw, edit,
+            measure, search or filter.
           </li>
           <li>
             <strong>Inspect and refine.</strong> Click a feature to open its properties and
@@ -35,7 +57,7 @@ export default function HelpPage() {
           <dt>Overlay</dt>
           <dd>A raster service layered on top: XYZ/TMS, TileJSON, WMS, GeoTIFF/COG, weather radar or Tessera.</dd>
           <dt>Import job</dt>
-          <dd>Background work for files, URLs, folders and OSM. Progress and errors appear in the job dialog.</dd>
+          <dd>Background work for files, URLs, folders and OSM. Follow progress and errors on the <Link to="/jobs">Imports</Link> page.</dd>
           <dt>Photo layer</dt>
           <dd>Point features created from EXIF GPS, with the original image attached.</dd>
           <dt>Editable OSM</dt>
@@ -57,14 +79,14 @@ export default function HelpPage() {
               </tr>
             </thead>
             <tbody>
-              <tr><td>GeoJSON, GPKG, Shapefile ZIP, KML/KMZ, GPX, CSV</td><td>Map → Add data → Upload</td><td>Reprojected to WGS84; invalid geometry reported.</td></tr>
-              <tr><td>GeoTIFF / COG</td><td>Add data or Overlays</td><td>Converted to COG and served as tiles.</td></tr>
-              <tr><td>WMS, WFS, ArcGIS, STAC</td><td>Add data → From URL</td><td>Remote services; WMS/WFS proxied by Strata.</td></tr>
+              <tr><td>GeoJSON, GPKG, Shapefile ZIP, KML/KMZ, GPX, CSV</td><td>Import → Upload file</td><td>Reprojected to WGS84; invalid geometry reported.</td></tr>
+              <tr><td>GeoTIFF / COG</td><td>Import or Overlays</td><td>Converted to COG and served as tiles.</td></tr>
+              <tr><td>WMS, WFS, ArcGIS, STAC</td><td>Import → From URL</td><td>Remote services; WMS/WFS proxied by Strata.</td></tr>
               <tr><td>XYZ, TileJSON, WMS</td><td>Overlays</td><td>Live raster overlays without copying pixels.</td></tr>
               <tr><td>Vector TileJSON (PBF)</td><td>Overlays</td><td>Generic vector-tile rendering with a simple style.</td></tr>
-              <tr><td>OSM area</td><td>Map → OSM data</td><td>Editable local copy, selected with a map rectangle.</td></tr>
-              <tr><td>Geotagged photos</td><td>Add data → Photos</td><td>JPEG/TIFF/PNG/WebP/RAF; EXIF GPS required for automatic placement.</td></tr>
-              <tr><td>NAS folder</td><td>Add data → Server / NAS</td><td>Bulk photos or geodata from a read-only mounted folder.</td></tr>
+              <tr><td>OSM area</td><td>Map → Add → Import OSM area</td><td>Editable local copy, selected with a map rectangle.</td></tr>
+              <tr><td>Geotagged photos</td><td>Import → Photos</td><td>JPEG/TIFF/PNG/WebP/RAF; EXIF GPS required for automatic placement.</td></tr>
+              <tr><td>NAS folder</td><td>Import → Server / NAS</td><td>Bulk photos or geodata from a read-only mounted folder.</td></tr>
               <tr><td>Weather radar</td><td>Live</td><td>Live RainViewer precipitation overlay.</td></tr>
               <tr><td>Weather points / earthquakes</td><td>Live</td><td>Open-Meteo and USGS snapshots with refresh.</td></tr>
               <tr><td>Tessera embeddings</td><td>Overlays → Tessera</td><td>Background download; exports GeoTIFFs.</td></tr>
@@ -84,7 +106,7 @@ export default function HelpPage() {
           <li><strong>Find a place</strong> — toolbar search flies to a place; the crosshair/geolocate control uses your browser location.</li>
           <li><strong>Layer filter</strong> — the box above the layer list narrows long layer lists by name.</li>
           <li><strong>Feature properties</strong> — edit the Fields view for normal tags; use JSON only for nested values. The table has its own row filter.</li>
-          <li><strong>Jobs</strong> — Dashboard → Recent imports → View all shows progress, retries and scheduled URL sources.</li>
+          <li><strong>Imports</strong> — the Imports page shows progress, errors, retries and scheduled URL sources.</li>
         </ul>
       </section>
 
@@ -99,6 +121,8 @@ export default function HelpPage() {
           <dd>Use a smaller area, upload in batches, or raise the relevant limit in <code>.env</code>.</dd>
           <dt>OSM area import rejected</dt>
           <dd>The rectangle is larger than <code>OVERPASS_MAX_AREA_DEG2</code>. Zoom in or raise the limit.</dd>
+          <dt>Remote basemap tiles</dt>
+          <dd>Remote OSM tiles are intended for light personal use. Switch to local vector tiles in the map toolbar for shared or public deployments.</dd>
           <dt>Overlay is blank</dt>
           <dd>Check the provider URL, permissions, attribution and the API logs. Private/LAN URLs require <code>ALLOW_PRIVATE_URL_IMPORTS=true</code>.</dd>
         </dl>

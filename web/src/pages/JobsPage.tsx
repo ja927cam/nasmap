@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client';
+import { useAuth } from '../api/auth';
 import type { ImportJob, Paged } from '../api/types';
 import JobProgress from '../components/JobProgress';
 import { Badge, EmptyState, Progress, Spinner, formatDate } from '../components/ui';
@@ -17,6 +18,23 @@ interface Source {
   enabled: boolean;
 }
 
+function jobTypeLabel(value: string) {
+  if (value === 'upload') return 'File import';
+  if (value === 'url') return 'URL import';
+  if (value === 'osm') return 'OSM import';
+  if (value === 'ingest') return 'Folder import';
+  if (value === 'raster') return 'Raster import';
+  if (value === 'tessera') return 'Tessera';
+  if (value === 'export') return 'Export';
+  return value;
+}
+
+function sourceLabel(value: string) {
+  if (value === 'url') return 'URL';
+  if (value === 'upload') return 'File';
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
 function formatInterval(seconds: number) {
   if (seconds >= 86400) return `${Math.round(seconds / 86400)} day(s)`;
   if (seconds >= 3600) return `${Math.round(seconds / 3600)} hour(s)`;
@@ -24,6 +42,8 @@ function formatInterval(seconds: number) {
 }
 
 export default function JobsPage() {
+  const { user } = useAuth();
+  const canImport = user?.role === 'admin' || user?.role === 'editor';
   const [jobs, setJobs] = useState<ImportJob[]>([]);
   const [sources, setSources] = useState<Source[]>([]);
   const [status, setStatus] = useState<(typeof statuses)[number]>('all');
@@ -57,8 +77,10 @@ export default function JobsPage() {
     <div className="page">
       <header className="page-head">
         <div>
-          <h1>Jobs</h1>
-          <p className="page-subtitle">File, URL, OSM, photo and folder imports.</p>
+          <h1>Imports & jobs</h1>
+          <p className="page-subtitle">
+            Everything Strata is processing, plus past imports, schedules and errors.
+          </p>
         </div>
         <button className="btn btn-secondary" onClick={() => void load()}>
           Refresh
@@ -81,8 +103,13 @@ export default function JobsPage() {
 
       <section className="panel">
         {jobs.length === 0 ? (
-          <EmptyState title="No jobs">
-            <p>Imports and long-running background work appear here.</p>
+          <EmptyState title="Nothing imported yet">
+            <p>Imports and long-running background work will appear here with their progress.</p>
+            {canImport && (
+              <Link className="btn btn-primary btn-sm" to="/map?new=upload">
+                Import data
+              </Link>
+            )}
           </EmptyState>
         ) : (
           <div className="list">
@@ -92,8 +119,14 @@ export default function JobsPage() {
                 <button className="job-name" onClick={() => setOpenJob(job.id)}>
                   <strong>{job.options?.name || job.job_type}</strong>
                   <small>
-                    {job.job_type} · {formatDate(job.created_at)}
+                    {jobTypeLabel(job.job_type)} · {formatDate(job.created_at)}
                   </small>
+                  {job.status === 'running' && job.message && (
+                    <small className="job-message">{job.message}</small>
+                  )}
+                  {job.status === 'failed' && job.error && (
+                    <small className="job-message danger">{job.error}</small>
+                  )}
                 </button>
                 {job.status === 'running' && (
                   <div className="job-progress-inline">
@@ -118,7 +151,7 @@ export default function JobsPage() {
                     Open layer
                   </Link>
                 )}
-                {['failed', 'cancelled'].includes(job.status) && (
+                {canImport && ['failed', 'cancelled'].includes(job.status) && (
                   <button
                     className="btn btn-ghost btn-xs"
                     onClick={async () => {
@@ -142,17 +175,19 @@ export default function JobsPage() {
       <section className="panel">
         <div className="panel-head">
           <h2>Scheduled sources</h2>
+          <span className="muted small">Automatic URL refreshes</span>
         </div>
         {sources.length === 0 ? (
           <p className="muted">
-            No scheduled sources. URL imports can set a refresh interval when they are created.
+            No automatic refreshes yet. When importing from a URL, open Advanced options and
+            choose a refresh interval.
           </p>
         ) : (
           <div className="list">
             {sources.map((source) => (
               <div key={source.id} className="list-row">
                 <div className="grow">
-                  <strong>{source.kind} source</strong>
+                  <strong>{sourceLabel(source.kind)} source</strong>
                   <small>
                     {source.url} ·{' '}
                     {source.refresh_interval_seconds
@@ -165,6 +200,7 @@ export default function JobsPage() {
                   <input
                     type="checkbox"
                     checked={source.enabled}
+                    disabled={!canImport}
                     onChange={async (e) => {
                       try {
                         await api(`/imports/sources/${source.id}`, {

@@ -126,7 +126,7 @@ Multiple roots are possible with a Compose override that mounts each folder and
 lists them comma-separated, for example `INGEST_ROOTS=/ingest,/archive`, as long
 as both paths exist inside the API and worker containers.
 
-Then use **Map → Add layer → Server / NAS**, scan a subfolder, and start a
+Then use **Map → Add → Import data → Server / NAS**, scan a subfolder, and start a
 background job. Photos are referenced in place; geodata files are read and
 imported into PostGIS/uploads. Keep the NAS folder mounted for photo originals
 to remain available.

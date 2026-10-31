@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import type { ImportJob, Layer, PublicConfig } from '../api/types';
 import { Field, Modal } from './ui';
@@ -6,14 +6,13 @@ import PhotoImportForm from './PhotoImportForm';
 import ServerIngestForm from './ServerIngestForm';
 import TesseraForm from './TesseraForm';
 
-type Tab = 'upload' | 'url' | 'photos' | 'ingest' | 'manual' | 'tessera';
+type Tab = 'upload' | 'url' | 'photos' | 'ingest' | 'tessera';
 
 const tabs: { id: Tab; label: string }[] = [
   { id: 'upload', label: 'Upload file' },
   { id: 'url', label: 'From URL' },
   { id: 'photos', label: 'Photos' },
   { id: 'ingest', label: 'Server / NAS' },
-  { id: 'manual', label: 'Blank layer' },
   { id: 'tessera', label: 'Tessera' },
 ];
 
@@ -22,7 +21,6 @@ export default function ImportWizard({
   layers,
   initialTab = 'upload',
   onClose,
-  onLayerCreated,
   onJob,
   onPhotosImported,
 }: {
@@ -30,7 +28,6 @@ export default function ImportWizard({
   layers: Layer[];
   initialTab?: Tab;
   onClose: () => void;
-  onLayerCreated: (layer: Layer) => void;
   onJob: (job: ImportJob) => void;
   onPhotosImported: (layerId: string | null) => void;
 }) {
@@ -39,9 +36,7 @@ export default function ImportWizard({
   const [busy, setBusy] = useState(false);
 
   const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
   const [visibility, setVisibility] = useState<'private' | 'organisation' | 'public'>('private');
-  const [geometryType, setGeometryType] = useState('point');
   const [appendTo, setAppendTo] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [licence, setLicence] = useState('');
@@ -51,28 +46,9 @@ export default function ImportWizard({
   const [wmsLayers, setWmsLayers] = useState('');
   const [refreshDays, setRefreshDays] = useState('');
 
-  async function createManual() {
-    setBusy(true);
-    setError(null);
-    try {
-      const layer = await api<Layer>('/layers', {
-        method: 'POST',
-        body: {
-          name,
-          description,
-          visibility,
-          geometry_type: geometryType,
-          source_type: 'manual',
-        },
-      });
-      onLayerCreated(layer);
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not create layer');
-    } finally {
-      setBusy(false);
-    }
-  }
+  useEffect(() => {
+    if (tab === 'tessera' && !config.tessera_enabled) setTab('upload');
+  }, [tab, config.tessera_enabled]);
 
   async function uploadFile() {
     if (!file) return;
@@ -124,11 +100,17 @@ export default function ImportWizard({
   }
 
   const vectorLayers = layers.filter((layer) => !['raster', 'table'].includes(layer.geometry_type));
+  const availableTabs = tabs.filter(
+    (item) => item.id !== 'tessera' || config.tessera_enabled,
+  );
 
   return (
-    <Modal title="Add layer" onClose={onClose} wide>
+    <Modal title="Add a layer" onClose={onClose} wide>
+      <p className="modal-intro">
+        Choose where your data is. Most people start with <strong>Upload file</strong>.
+      </p>
       <div className="tabs">
-        {tabs.map((item) => (
+        {availableTabs.map((item) => (
           <button
             key={item.id}
             className={tab === item.id ? 'tab active' : 'tab'}
@@ -142,50 +124,12 @@ export default function ImportWizard({
         ))}
       </div>
 
-      {tab === 'manual' && (
-        <div className="stack">
-          <p className="muted">
-            Create an empty layer, then draw points, lines or polygons on the map.
-          </p>
-          <Field label="Name">
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Field survey" />
-          </Field>
-          <Field label="Description">
-            <textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
-          </Field>
-          <div className="grid-2">
-            <Field label="Geometry type">
-              <select value={geometryType} onChange={(e) => setGeometryType(e.target.value)}>
-                <option value="point">Point</option>
-                <option value="line">Line</option>
-                <option value="polygon">Polygon</option>
-                <option value="geometry">Mixed geometry</option>
-              </select>
-            </Field>
-            <Field label="Visibility">
-              <select value={visibility} onChange={(e) => setVisibility(e.target.value as typeof visibility)}>
-                <option value="private">Private</option>
-                <option value="organisation">Internal</option>
-                <option value="public">Public</option>
-              </select>
-            </Field>
-          </div>
-          <div className="button-row end">
-            <button className="btn btn-ghost" onClick={onClose}>
-              Cancel
-            </button>
-            <button className="btn btn-primary" disabled={!name.trim() || busy} onClick={createManual}>
-              {busy ? 'Creating…' : 'Create layer'}
-            </button>
-          </div>
-        </div>
-      )}
-
       {tab === 'upload' && (
         <div className="stack">
           <p className="muted">
-            GeoJSON, GeoPackage, Shapefile ZIP, KML/KMZ, GPX, CSV, FlatGeobuf, GML, DXF,
-            GeoParquet and GeoTIFF/COG up to {config.max_upload_mb} MB.
+            Choose a file and we will create a layer for it. GeoJSON, GeoPackage, Shapefile ZIP,
+            KML/KMZ, GPX, CSV, FlatGeobuf, GML, DXF, GeoParquet and GeoTIFF/COG up to{' '}
+            {config.max_upload_mb} MB.
           </p>
           <label className="file-drop">
             <input
@@ -200,38 +144,53 @@ export default function ImportWizard({
             <strong>{file ? file.name : 'Choose a file'}</strong>
             <small>{file ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : 'click to browse'}</small>
           </label>
-          <div className="grid-2">
-            <Field label="Layer name">
-              <input value={name} onChange={(e) => setName(e.target.value)} />
-            </Field>
-            <Field label="Append to existing layer" hint="Leave empty to create a new layer." help="Appending adds the file’s features to an existing vector layer. Geometry type must be compatible.">
-              <select value={appendTo} onChange={(e) => setAppendTo(e.target.value)}>
-                <option value="">Create new layer</option>
-                {vectorLayers.map((layer) => (
-                  <option key={layer.id} value={layer.id}>
-                    {layer.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
-          </div>
-          {!appendTo && (
-            <div className="grid-2">
-              <Field label="Visibility">
-                <select value={visibility} onChange={(e) => setVisibility(e.target.value as typeof visibility)}>
-                  <option value="private">Private</option>
-                  <option value="organisation">Internal</option>
-                  <option value="public">Public</option>
-                </select>
-              </Field>
-              <Field label="Licence">
-                <input value={licence} onChange={(e) => setLicence(e.target.value)} placeholder="ODbL, CC-BY…" />
-              </Field>
-            </div>
-          )}
-          <Field label="Attribution">
-            <input value={attribution} onChange={(e) => setAttribution(e.target.value)} />
+          <Field
+            label="Layer name"
+            hint={file ? 'Change it if you like — otherwise the filename is used.' : undefined}
+          >
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Uses the filename"
+            />
           </Field>
+          <details className="advanced-options">
+            <summary>Advanced options</summary>
+            <div className="stack">
+              <div className="grid-2">
+                <Field
+                  label="Add to an existing layer"
+                  help="Adds the file’s features to an existing vector layer instead of creating a new one. The geometry type must be compatible."
+                >
+                  <select value={appendTo} onChange={(e) => setAppendTo(e.target.value)}>
+                    <option value="">Create a new layer</option>
+                    {vectorLayers.map((layer) => (
+                      <option key={layer.id} value={layer.id}>
+                        {layer.name}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                {!appendTo && (
+                  <Field label="Visibility">
+                    <select value={visibility} onChange={(e) => setVisibility(e.target.value as typeof visibility)}>
+                      <option value="private">Private — only me</option>
+                      <option value="organisation">Internal — everyone here</option>
+                      <option value="public">Public — everyone here</option>
+                    </select>
+                  </Field>
+                )}
+              </div>
+              <div className="grid-2">
+                <Field label="Licence">
+                  <input value={licence} onChange={(e) => setLicence(e.target.value)} placeholder="ODbL, CC-BY…" />
+                </Field>
+                <Field label="Attribution">
+                  <input value={attribution} onChange={(e) => setAttribution(e.target.value)} />
+                </Field>
+              </div>
+            </div>
+          </details>
           <div className="button-row end">
             <button className="btn btn-ghost" onClick={onClose}>
               Cancel
@@ -246,8 +205,8 @@ export default function ImportWizard({
       {tab === 'url' && (
         <div className="stack">
           <p className="muted">
-            Remote files and OGC/ArcGIS/STAC services. Private and link-local addresses are
-            blocked; downloads are capped at {config.max_url_import_mb} MB.
+            Paste a direct file link or a WMS, WFS, ArcGIS or STAC service URL. Strata detects the
+            type automatically when it can.
           </p>
           <Field label="URL" help="Use the direct data or service URL. WMS needs layer names; WFS can often discover its feature type.">
             <input
@@ -271,7 +230,11 @@ export default function ImportWizard({
               </select>
             </Field>
             <Field label="Layer name">
-              <input value={name} onChange={(e) => setName(e.target.value)} />
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Optional — names it automatically"
+              />
             </Field>
           </div>
           {kind === 'wms' && (
@@ -279,34 +242,46 @@ export default function ImportWizard({
               <input value={wmsLayers} onChange={(e) => setWmsLayers(e.target.value)} />
             </Field>
           )}
-          <div className="grid-2">
-            <Field label="Append to existing layer">
-              <select value={appendTo} onChange={(e) => setAppendTo(e.target.value)}>
-                <option value="">Create new layer</option>
-                {vectorLayers.map((layer) => (
-                  <option key={layer.id} value={layer.id}>
-                    {layer.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Refresh interval (days)" hint="Optional scheduled refresh for compatible URLs." help="Strata re-downloads the source on this schedule and replaces features that came from that source.">
-              <input
-                type="number"
-                min={0}
-                value={refreshDays}
-                onChange={(e) => setRefreshDays(e.target.value)}
-              />
-            </Field>
-          </div>
-          <div className="grid-2">
-            <Field label="Licence">
-              <input value={licence} onChange={(e) => setLicence(e.target.value)} />
-            </Field>
-            <Field label="Attribution">
-              <input value={attribution} onChange={(e) => setAttribution(e.target.value)} />
-            </Field>
-          </div>
+          <details className="advanced-options">
+            <summary>Advanced options</summary>
+            <div className="stack">
+              <div className="grid-2">
+                <Field
+                  label="Add to an existing layer"
+                  help="Adds the imported features to an existing vector layer instead of creating a new one."
+                >
+                  <select value={appendTo} onChange={(e) => setAppendTo(e.target.value)}>
+                    <option value="">Create a new layer</option>
+                    {vectorLayers.map((layer) => (
+                      <option key={layer.id} value={layer.id}>
+                        {layer.name}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field
+                  label="Refresh automatically"
+                  hint="Optional. Re-download this source on a schedule."
+                  help="Strata re-downloads the source on this schedule and replaces features that came from it."
+                >
+                  <select value={refreshDays} onChange={(e) => setRefreshDays(e.target.value)}>
+                    <option value="">Never</option>
+                    <option value="1">Every day</option>
+                    <option value="7">Every week</option>
+                    <option value="30">Every month</option>
+                  </select>
+                </Field>
+              </div>
+              <div className="grid-2">
+                <Field label="Licence">
+                  <input value={licence} onChange={(e) => setLicence(e.target.value)} />
+                </Field>
+                <Field label="Attribution">
+                  <input value={attribution} onChange={(e) => setAttribution(e.target.value)} />
+                </Field>
+              </div>
+            </div>
+          </details>
           <div className="button-row end">
             <button className="btn btn-ghost" onClick={onClose}>
               Cancel

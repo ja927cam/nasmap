@@ -19,7 +19,8 @@ interface Props {
   onAdd: () => void;
   onAddBlank: () => void;
   canCreate: boolean;
-  basemap: 'remote' | 'local';
+  onClose?: () => void;
+  open?: boolean;
 }
 
 function geometryIcon(type: string): IconName {
@@ -37,6 +38,21 @@ function visibilityLabel(value: string) {
   return 'Private';
 }
 
+function sourceLabel(value: string) {
+  if (value === 'manual') return 'Drawn';
+  if (value === 'upload') return 'File';
+  if (value === 'url') return 'Link';
+  if (value === 'osm') return 'OSM';
+  if (value === 'tessera') return 'Tessera';
+  if (value === 'api') return 'Live';
+  return value;
+}
+
+function geometryLabel(value: string) {
+  if (value === 'geometry') return 'Mixed';
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
 export default function LayerPanel(props: Props) {
   const [filter, setFilter] = useState('');
   const visibleLayers = filter.trim()
@@ -45,32 +61,77 @@ export default function LayerPanel(props: Props) {
       )
     : props.layers;
   return (
-    <div className="layer-panel">
+    <div className={`layer-panel ${props.open ? 'open' : ''}`}>
       <div className="panel-head">
         <h2>Layers</h2>
-        {props.canCreate && (
-          <div className="layer-add-actions">
-            <button className="btn btn-ghost btn-sm" onClick={props.onAddBlank}>
-              <Icon name="plus" size={13} />
-              Blank
+        <div className="layer-add-actions">
+          {props.canCreate && (
+            <>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={props.onAddBlank}
+                title="Create an empty layer to draw points, lines or polygons"
+              >
+                <Icon name="plus" size={13} />
+                New
+              </button>
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={props.onAdd}
+                title="Import a file, URL, folder, photos or OSM data"
+              >
+                Import
+              </button>
+            </>
+          )}
+          {props.onClose && (
+            <button
+              className="icon-btn layer-panel-close"
+              onClick={props.onClose}
+              aria-label="Close layer panel"
+            >
+              <Icon name="close" size={16} />
             </button>
-            <button className="btn btn-primary btn-sm" onClick={props.onAdd}>
-              Data
-            </button>
+          )}
+        </div>
+      </div>
+      {props.layers.length > 0 && (
+        <div className="layer-filter">
+          <Icon name="search" size={13} />
+          <input
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            placeholder="Find a layer…"
+            aria-label="Filter layers by name"
+          />
+        </div>
+      )}
+      <div className="layer-list">
+        {props.layers.length === 0 && (
+          <div className="layer-empty">
+            <span className="layer-empty-icon">
+              <Icon name="layers" size={22} />
+            </span>
+            <strong>No layers yet</strong>
+            <p>
+              {props.canCreate
+                ? 'Import data you already have, or create an empty layer and draw on the map.'
+                : 'Nothing has been shared with you yet. Ask an administrator for access.'}
+            </p>
+            {props.canCreate && (
+              <div className="layer-empty-actions">
+                <button className="btn btn-primary btn-sm" onClick={props.onAdd}>
+                  <Icon name="upload" size={13} />
+                  Import data
+                </button>
+                <button className="btn btn-ghost btn-sm" onClick={props.onAddBlank}>
+                  <Icon name="plus" size={13} />
+                  Draw a layer
+                </button>
+              </div>
+            )}
           </div>
         )}
-      </div>
-      <div className="layer-filter">
-        <Icon name="search" size={13} />
-        <input
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          placeholder="Filter layers"
-          aria-label="Filter layers by name"
-        />
-      </div>
-      <div className="layer-list">
-        {props.layers.length === 0 && <p className="muted pad">No layers yet. Add one to begin.</p>}
         {props.layers.length > 0 && visibleLayers.length === 0 && (
           <p className="muted pad">No layer matches “{filter}”.</p>
         )}
@@ -95,7 +156,7 @@ export default function LayerPanel(props: Props) {
                   <strong>{layer.name}</strong>
                   <small>
                     {layer.feature_count.toLocaleString()} {isRaster ? 'raster' : 'features'} ·{' '}
-                    {layer.source_type}
+                    {sourceLabel(layer.source_type)}
                   </small>
                 </div>
                 {layer.visibility !== 'private' && (
@@ -120,7 +181,8 @@ export default function LayerPanel(props: Props) {
                   </label>
                   <div className="layer-detail">
                     <span>
-                      {layer.geometry_type} · {layer.visibility} · {layer.source_type}
+                      {geometryLabel(layer.geometry_type)} · {visibilityLabel(layer.visibility)} ·{' '}
+                      {sourceLabel(layer.source_type)}
                     </span>
                     {layer.metadata?.provider && (
                       <span>
@@ -181,12 +243,6 @@ export default function LayerPanel(props: Props) {
           );
         })}
       </div>
-      {props.basemap === 'remote' && (
-        <p className="map-policy">
-          Remote OSM tiles are intended for light personal use. Use local tiles for shared or
-          public deployments.
-        </p>
-      )}
     </div>
   );
 }

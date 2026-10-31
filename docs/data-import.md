@@ -119,7 +119,7 @@ Strata on a network where outbound access is appropriate.
 
 ## Geotagged photos
 
-**Map → Add layer → Photos** accepts multiple JPEG/TIFF/PNG/WebP files. Strata
+**Map → Add → Import data → Photos** accepts multiple JPEG/TIFF/PNG/WebP files. Strata
 reads each file's EXIF GPS tags and:
 
 - creates a point feature per geotagged photo in a new photo layer (or an
@@ -159,7 +159,7 @@ only paths under `INGEST_ROOTS` are visible. There is no arbitrary filesystem
 browsing: absolute paths are resolved, symlinks are handled, and anything
 outside the configured roots is rejected.
 
-**Map → Add layer → Server / NAS**:
+**Map → Add → Import data → Server / NAS**:
 
 1. choose a configured root and an optional subfolder;
 2. choose **Geotagged photos** or **Geodata files**;
@@ -197,7 +197,7 @@ implemented as one overlay provider and is documented separately in
 
 ## Editable OSM data
 
-**Map → OSM data** imports a small area of current OSM data from Overpass into a
+**Map → Add → Import OSM area** imports a small area of current OSM data from Overpass into a
 normal editable layer. Polygons, lines and points use the same feature editing,
 attribute table, styling and export behaviour as any other layer. Edits are
 local and are not written back to OSM automatically. See [osm.md](osm.md) for

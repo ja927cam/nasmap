@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api, download } from '../api/client';
 import { usePublicConfig } from '../api/config';
 import { useAuth } from '../api/auth';
@@ -40,7 +40,7 @@ export default function MapPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [bboxFilter, setBboxFilter] = useState<string | null>(null);
   const [wizard, setWizard] = useState<
-    null | 'upload' | 'url' | 'photos' | 'ingest' | 'manual' | 'tessera'
+    null | 'upload' | 'url' | 'photos' | 'ingest' | 'tessera'
   >(null);
   const [blankOpen, setBlankOpen] = useState(false);
   const [osmOpen, setOsmOpen] = useState(false);
@@ -49,7 +49,8 @@ export default function MapPage() {
   const [styleLayer, setStyleLayer] = useState<Layer | null>(null);
   const [shareLayer, setShareLayer] = useState<Layer | null>(null);
   const [osmFeature, setOsmFeature] = useState<GeoFeature | null>(null);
-  const [showTable, setShowTable] = useState(true);
+  const [showTable, setShowTable] = useState(false);
+  const [layersOpen, setLayersOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -97,8 +98,9 @@ export default function MapPage() {
   useEffect(() => {
     if (params.get('new')) {
       const mode = params.get('new');
-      if (
-        mode === 'manual' ||
+      if (mode === 'manual') {
+        setBlankOpen(true);
+      } else if (
         mode === 'upload' ||
         mode === 'url' ||
         mode === 'photos' ||
@@ -150,6 +152,11 @@ export default function MapPage() {
     [layers, activeLayerId],
   );
   const canWriteGlobally = user?.role === 'admin' || user?.role === 'editor';
+  const searchable = Boolean(
+    activeLayer &&
+      !['raster', 'table'].includes(activeLayer.geometry_type) &&
+      !activeLayer.metadata?.vector_tiles,
+  );
   const editable = Boolean(
     canWriteGlobally &&
       activeLayer &&
@@ -158,12 +165,59 @@ export default function MapPage() {
       (activeLayer.access_role === 'owner' || activeLayer.access_role === 'editor'),
   );
 
+  const drawing =
+    tool === 'point' || tool === 'line' || tool === 'polygon';
+
+  useEffect(() => {
+    if (!editable && (tool === 'point' || tool === 'line' || tool === 'polygon')) {
+      setTool('pan');
+    }
+  }, [editable, tool]);
+  let guideTitle = 'Choose a layer';
+  let guideBody = 'Select a layer in the panel to see its features, styling and tools.';
+  if (layers.length === 0) {
+    guideTitle = canWriteGlobally ? 'Start with your first layer' : 'No layers shared with you';
+    guideBody = canWriteGlobally
+      ? 'Import a file, connect a URL, add photos or draw your own points, lines and polygons.'
+      : 'Ask an administrator to share a layer with your account.';
+  } else if (!activeLayer) {
+    guideTitle = 'Choose a layer';
+    guideBody = 'Select a layer in the panel to show its features and tools.';
+  } else if (['raster', 'table'].includes(activeLayer.geometry_type) || activeLayer.metadata?.vector_tiles) {
+    guideTitle = `Viewing ${activeLayer.name}`;
+    guideBody = 'This is a read-only layer. Zoom, adjust its opacity, or check its details in the layer panel.';
+  } else if (!editable) {
+    guideTitle = `Viewing ${activeLayer.name}`;
+    guideBody = canWriteGlobally
+      ? 'You can browse this layer but not edit its features.'
+      : 'Your account has view-only access to this layer.';
+  } else if (drawing) {
+    const label = tool.charAt(0).toUpperCase() + tool.slice(1);
+    guideTitle = `Drawing ${label.toLowerCase()}s into ${activeLayer.name}`;
+    guideBody = 'Click the map to add. Press Enter to finish, Backspace to undo, or Esc to cancel.';
+  } else if (selectedFeature) {
+    guideTitle = 'Feature selected';
+    guideBody = 'Edit its fields or attachments in the panel. Drag the white handles to reshape it.';
+  } else if (activeLayer.feature_count === 0) {
+    guideTitle = 'Your layer is ready to draw';
+    guideBody = 'Choose Point, Line or Polygon above, then click the map to add your first feature.';
+  } else {
+    guideTitle = `Editing ${activeLayer.name}`;
+    guideBody = 'Choose Point, Line or Polygon to add features, or Select to click an existing one.';
+  }
+  const filtered = Boolean(bboxFilter || searchQuery);
+
   const refreshActiveFeatures = useCallback(
     async (layerId: string) => {
       try {
         const data = await api<FeatureCollection>(`/layers/${layerId}/features?limit=2000`);
         loadedRef.current[layerId] = '';
         setLayerData((prev) => ({ ...prev, [layerId]: data }));
+        setLayers((prev) =>
+          prev.map((layer) =>
+            layer.id === layerId ? { ...layer, feature_count: data.meta.total } : layer,
+          ),
+        );
       } catch (err) {
         flash(err instanceof Error ? err.message : 'Could not refresh features');
       }
@@ -306,11 +360,9 @@ export default function MapPage() {
           </button>
           <button
             className={tool === 'point' ? 'tool active' : 'tool'}
-            onClick={() => {
-              if (!editable) return flash('Select an editable vector layer first');
-              setTool('point');
-            }}
-            title="Draw point"
+            onClick={() => setTool('point')}
+            disabled={!editable}
+            title={editable ? 'Draw point' : 'Select an editable layer first'}
             aria-label="Draw point"
           >
             <Icon name="point" size={15} />
@@ -318,11 +370,9 @@ export default function MapPage() {
           </button>
           <button
             className={tool === 'line' ? 'tool active' : 'tool'}
-            onClick={() => {
-              if (!editable) return flash('Select an editable vector layer first');
-              setTool('line');
-            }}
-            title="Draw line"
+            onClick={() => setTool('line')}
+            disabled={!editable}
+            title={editable ? 'Draw line' : 'Select an editable layer first'}
             aria-label="Draw line"
           >
             <Icon name="line" size={15} />
@@ -330,11 +380,9 @@ export default function MapPage() {
           </button>
           <button
             className={tool === 'polygon' ? 'tool active' : 'tool'}
-            onClick={() => {
-              if (!editable) return flash('Select an editable vector layer first');
-              setTool('polygon');
-            }}
-            title="Draw polygon"
+            onClick={() => setTool('polygon')}
+            disabled={!editable}
+            title={editable ? 'Draw polygon' : 'Select an editable layer first'}
             aria-label="Draw polygon"
           >
             <Icon name="polygon" size={15} />
@@ -377,11 +425,18 @@ export default function MapPage() {
           }}
         >
           <input
-            placeholder="Search attributes…"
+            placeholder={searchable ? 'Search this layer’s attributes…' : 'Choose a layer to search'}
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
+            disabled={!searchable}
           />
-          <button className="tool" type="submit" title="Search" aria-label="Search">
+          <button
+            className="tool"
+            type="submit"
+            title="Search the active layer"
+            aria-label="Search"
+            disabled={!searchable}
+          >
             <Icon name="search" size={15} />
           </button>
           {searchQuery && (
@@ -399,64 +454,136 @@ export default function MapPage() {
             </button>
           )}
         </form>
-        <button
-          className={bboxFilter ? 'btn btn-secondary btn-sm' : 'btn btn-ghost btn-sm'}
-          onClick={filterToView}
-        >
-          <Icon name="filter" size={14} />
-          {bboxFilter ? 'Filtered to view' : 'Filter to view'}
-        </button>
-        {bboxFilter && (
-          <button className="btn btn-ghost btn-sm" onClick={() => setBboxFilter(null)}>
-            Clear
-          </button>
-        )}
         <div className="spacer" />
         <select
           className="select-sm"
           value={basemap}
           onChange={(e) => setBasemap(e.target.value as 'remote' | 'local')}
+          aria-label="Basemap"
+          title="Remote OSM tiles are for light personal use. Choose local vector tiles for shared deployments."
         >
           <option value="remote">OSM raster</option>
           <option value="local">Local vector tiles</option>
         </select>
         {canWriteGlobally && (
-          <button className="btn btn-secondary btn-sm" onClick={() => setBlankOpen(true)}>
-            <Icon name="plus" size={14} />
-            Blank layer
-          </button>
+          <details className="toolbar-menu">
+            <summary className="btn btn-primary btn-sm toolbar-add">
+              <Icon name="plus" size={14} />
+              Add
+            </summary>
+            <div className="toolbar-menu-pop">
+              <button
+                onClick={(event) => {
+                  event.currentTarget.closest('details')?.removeAttribute('open');
+                  setWizard('upload');
+                }}
+              >
+                <Icon name="upload" size={14} />
+                <span><strong>Import data</strong><small>File, URL, folder, photos or OSM</small></span>
+              </button>
+              <button
+                onClick={(event) => {
+                  event.currentTarget.closest('details')?.removeAttribute('open');
+                  setBlankOpen(true);
+                }}
+              >
+                <Icon name="plus" size={14} />
+                <span><strong>Draw a layer</strong><small>Start with an empty layer</small></span>
+              </button>
+              <button
+                onClick={(event) => {
+                  event.currentTarget.closest('details')?.removeAttribute('open');
+                  const bounds = mapRef.current?.getBounds();
+                  if (bounds) {
+                    setOsmBBox([
+                      bounds.getWest(),
+                      bounds.getSouth(),
+                      bounds.getEast(),
+                      bounds.getNorth(),
+                    ]);
+                  }
+                  setOsmOpen(true);
+                }}
+              >
+                <Icon name="layers" size={14} />
+                <span><strong>Import OSM area</strong><small>Editable OpenStreetMap copy</small></span>
+              </button>
+            </div>
+          </details>
         )}
-        {canWriteGlobally && (
+      </div>
+
+      <div className={`map-guide ${layers.length === 0 ? 'attention' : ''}`} role="status" aria-live="polite">
+        <span className="map-guide-icon">
+          <Icon name={layers.length === 0 ? 'layers' : editable ? 'cursor' : 'help'} size={15} />
+        </span>
+        <div className="map-guide-copy">
+          <strong>{guideTitle}</strong>
+          <span>{guideBody}</span>
+        </div>
+        <div className="map-guide-actions">
           <button
-            className="btn btn-secondary btn-sm"
-            onClick={() => {
-              const bounds = mapRef.current?.getBounds();
-              if (bounds) {
-                setOsmBBox([
-                  bounds.getWest(),
-                  bounds.getSouth(),
-                  bounds.getEast(),
-                  bounds.getNorth(),
-                ]);
-              }
-              setOsmOpen(true);
-            }}
+            className="btn btn-ghost btn-xs mobile-layers-btn"
+            onClick={() => setLayersOpen(true)}
+            aria-expanded={layersOpen}
+            title="Show layers"
           >
-            <Icon name="layers" size={14} />
-            OSM data
+            <Icon name="layers" size={13} />
+            Layers
           </button>
-        )}
-        {canWriteGlobally && (
-          <button className="btn btn-primary btn-sm" onClick={() => setWizard('upload')}>
-            <Icon name="upload" size={14} />
-            Add data
-          </button>
-        )}
+          {layers.length === 0 && canWriteGlobally && (
+            <>
+              <button className="btn btn-primary btn-xs" onClick={() => setWizard('upload')}>
+                Import data
+              </button>
+              <button className="btn btn-ghost btn-xs" onClick={() => setBlankOpen(true)}>
+                Draw a layer
+              </button>
+            </>
+          )}
+          {activeLayer && ['raster', 'table'].includes(activeLayer.geometry_type) && (
+            <button className="btn btn-ghost btn-xs" onClick={() => void fitLayer(activeLayer)}>
+              Zoom to layer
+            </button>
+          )}
+          {!bboxFilter && (
+            <button className="btn btn-ghost btn-xs" onClick={filterToView}>
+              <Icon name="filter" size={13} />
+              Filter to view
+            </button>
+          )}
+          {filtered && (
+            <button
+              className="btn btn-ghost btn-xs"
+              onClick={() => {
+                setBboxFilter(null);
+                setSearchInput('');
+                setSearchQuery('');
+              }}
+            >
+              Clear view filter
+            </button>
+          )}
+          {activeLayer &&
+            activeLayer.feature_count > 0 &&
+            !['raster', 'table'].includes(activeLayer.geometry_type) &&
+            !activeLayer.metadata?.vector_tiles &&
+            !showTable && (
+              <button className="btn btn-ghost btn-xs" onClick={() => setShowTable(true)}>
+                Show table
+              </button>
+            )}
+          <Link className="map-guide-help" to="/help">
+            <Icon name="help" size={13} />
+            Help
+          </Link>
+        </div>
       </div>
 
       <div className="map-body">
         <LayerPanel
           layers={layers}
+          onClose={() => setLayersOpen(false)}
           activeLayerId={activeLayerId}
           visible={visible}
           opacity={opacity}
@@ -465,6 +592,7 @@ export default function MapPage() {
             setParams({ layer: layer.id }, { replace: true });
             setSelectedFeature(null);
             setSelectedLayerId(null);
+            setLayersOpen(false);
           }}
           onToggle={(id, value) => setVisible((prev) => ({ ...prev, [id]: value }))}
           onOpacity={(id, value) => setOpacity((prev) => ({ ...prev, [id]: value }))}
@@ -480,8 +608,15 @@ export default function MapPage() {
           onAdd={() => setWizard('upload')}
           onAddBlank={() => setBlankOpen(true)}
           canCreate={canWriteGlobally}
-          basemap={basemap}
+          open={layersOpen}
         />
+        {layersOpen && (
+          <button
+            className="layer-backdrop"
+            aria-label="Close layer panel"
+            onClick={() => setLayersOpen(false)}
+          />
+        )}
 
         <div className="map-stage">
           <MapView
@@ -559,12 +694,15 @@ export default function MapPage() {
               />
             </div>
           )}
-          {!showTable && activeLayer && (
-            <button className="table-toggle" onClick={() => setShowTable(true)}>
-              <Icon name="table" size={14} />
-              Attribute table
-            </button>
-          )}
+          {!showTable &&
+            activeLayer &&
+            !['raster', 'table'].includes(activeLayer.geometry_type) &&
+            !activeLayer.metadata?.vector_tiles && (
+              <button className="table-toggle" onClick={() => setShowTable(true)}>
+                <Icon name="table" size={14} />
+                Attribute table
+              </button>
+            )}
         </div>
       </div>
 
@@ -598,14 +736,6 @@ export default function MapPage() {
           layers={layers}
           initialTab={wizard}
           onClose={() => setWizard(null)}
-          onLayerCreated={(layer) => {
-            setLayers((prev) => [layer, ...prev]);
-            setVisible((prev) => ({ ...prev, [layer.id]: true }));
-            setOpacity((prev) => ({ ...prev, [layer.id]: 1 }));
-            setActiveLayerId(layer.id);
-            setWizard(null);
-            flash('Layer created');
-          }}
           onJob={(job) => setJobId(job.id)}
           onPhotosImported={(layerId) => {
             if (layerId) {

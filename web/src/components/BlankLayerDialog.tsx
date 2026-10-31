@@ -42,10 +42,11 @@ export default function BlankLayerDialog({
   }
 
   return (
-    <Modal title="New blank layer" onClose={onClose}>
+    <Modal title="Create a layer to draw on" onClose={onClose}>
       <form className="stack" onSubmit={create}>
         <p className="muted">
-          Creates an empty layer. After saving, draw points, lines or polygons with the map tools.
+          Give the layer a name and choose what you want to draw. You can add features as soon as
+          it is created.
         </p>
         <Field label="Name">
           <input

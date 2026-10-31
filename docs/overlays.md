@@ -22,7 +22,7 @@ overlay presets and layers but only editors/admins can add them.
 
 The **Overlays** page adds XYZ, TileJSON and WMS sources immediately. GeoTIFF/
 COG URLs and Tessera use the same page but run background jobs. Vector overlays
-from GeoJSON, WFS and ArcGIS are available from **Map → Add layer → From URL**.
+from GeoJSON, WFS and ArcGIS are available from **Import → From URL**.
 
 ## XYZ / TMS
 

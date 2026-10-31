@@ -5,6 +5,7 @@ import Icon, { type IconName } from './Icon';
 const navItems: { to: string; label: string; end?: boolean; icon: IconName }[] = [
   { to: '/', label: 'Dashboard', end: true, icon: 'dashboard' },
   { to: '/map', label: 'Map', icon: 'map' },
+  { to: '/jobs', label: 'Imports', icon: 'activity' },
   { to: '/live', label: 'Live', icon: 'weather' },
   { to: '/overlays', label: 'Overlays', icon: 'layers' },
   { to: '/help', label: 'Help', icon: 'help' },
@@ -17,7 +18,7 @@ export default function Layout() {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <NavLink to="/" className="brand">
+        <NavLink to="/" className="brand" title="Strata home">
           <span className="brand-mark">
             <Icon name="layers" size={15} strokeWidth={2} />
           </span>
@@ -29,6 +30,7 @@ export default function Layout() {
               key={item.to}
               to={item.to}
               end={item.end}
+              title={item.label}
               className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}
             >
               <span className="nav-icon">
@@ -40,6 +42,7 @@ export default function Layout() {
           {user?.role === 'admin' && (
             <NavLink
               to="/admin"
+              title="Administration"
               className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}
             >
               <span className="nav-icon">
@@ -61,6 +64,7 @@ export default function Layout() {
             <span>{user?.role}</span>
             <button
               className="sidebar-link"
+              title="Sign out"
               onClick={async () => {
                 await logout();
                 navigate('/login');

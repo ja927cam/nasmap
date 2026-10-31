@@ -179,6 +179,7 @@ export default function LivePage() {
             >
               {busy === 'weather' ? 'Fetching…' : 'Create weather layer'}
             </button>
+            {!bbox && <p className="hint">Choose an area on the map to enable this.</p>}
           </div>
           <div className="live-map">
             <BBoxPicker

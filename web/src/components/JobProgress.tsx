@@ -3,6 +3,17 @@ import { api } from '../api/client';
 import type { ImportJob } from '../api/types';
 import { Modal, Progress } from './ui';
 
+function jobTypeLabel(value: string) {
+  if (value === 'upload') return 'File import';
+  if (value === 'url') return 'URL import';
+  if (value === 'osm') return 'OSM import';
+  if (value === 'ingest') return 'Folder import';
+  if (value === 'raster') return 'Raster import';
+  if (value === 'tessera') return 'Tessera';
+  if (value === 'export') return 'Export';
+  return value;
+}
+
 export default function JobProgress({
   jobId,
   onClose,
@@ -63,7 +74,7 @@ export default function JobProgress({
   const done = job && ['succeeded', 'failed', 'cancelled'].includes(job.status);
 
   return (
-    <Modal title="Import job" onClose={onClose}>
+    <Modal title="Import progress" onClose={onClose}>
       {!job ? (
         <p className="muted">Loading job…</p>
       ) : (
@@ -72,7 +83,7 @@ export default function JobProgress({
             <div>
               <strong>{job.options?.name || job.job_type}</strong>
               <small className="muted">
-                {job.job_type} · {job.status}
+                {jobTypeLabel(job.job_type)} · {job.status}
               </small>
             </div>
             <span className={`badge badge-${job.status}`}>{job.status}</span>
@@ -80,6 +91,16 @@ export default function JobProgress({
           <Progress value={job.progress} />
           <p className="muted">{job.message}</p>
           {job.error && <div className="error-box">{job.error}</div>}
+          {job.status === 'succeeded' && job.layer_id && (
+            <div className="success-box">
+              Import complete. Close this window to see the new layer on the map.
+            </div>
+          )}
+          {job.status === 'failed' && (
+            <p className="muted">
+              Nothing was added. Check the error above, then retry or change the source.
+            </p>
+          )}
           {job.result?.feature_count !== undefined && (
             <div className="result-grid">
               <div>
@@ -129,6 +150,11 @@ export default function JobProgress({
             </button>
           ) : null}
           {job.status === 'succeeded' && job.layer_id && (
+            <button className="btn btn-primary" onClick={onClose}>
+              View layer
+            </button>
+          )}
+          {job.status === 'succeeded' && !job.layer_id && (
             <button className="btn btn-primary" onClick={onClose}>
               Done
             </button>

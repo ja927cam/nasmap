@@ -92,15 +92,17 @@ export default function OverlaysPage() {
         <div>
           <h1>Overlays</h1>
           <p className="page-subtitle">
-            Add raster services or satellite embeddings on top of your layers.
+            Add reference maps, imagery and satellite data as layers on top of the map.
           </p>
         </div>
       </header>
 
+      <ErrorBox message={error} />
+
       {canEdit && (
       <section className="panel">
         <div className="panel-head">
-          <h2>One-click overlays</h2>
+          <h2>Quick adds</h2>
         </div>
         <p className="hint">
           These presets use public services. Check each provider’s terms for production use.
@@ -195,18 +197,25 @@ export default function OverlaysPage() {
 
         <p className="hint">
           Vector overlays from GeoJSON, WFS or ArcGIS can be added from{' '}
-          <Link to="/map?new=url">Map → Add layer → From URL</Link>.
+          <Link to="/map?new=url">Import → From URL</Link>.
         </p>
       </section>
       )}
 
       <section className="panel">
         <div className="panel-head">
-          <h2>Your overlays</h2>
+          <h2>Available overlays</h2>
         </div>
+        {!canEdit && (
+          <p className="hint">Only editors can add overlays. You can still open existing ones.</p>
+        )}
         {overlays.length === 0 ? (
           <EmptyState title="No overlays yet">
-            <p>Add an XYZ, TileJSON or WMS service above, or import a Tessera area.</p>
+            <p>
+              {canEdit
+                ? 'Add a quick overlay above, or choose a provider to add your own.'
+                : 'Nothing has been shared with your account yet.'}
+            </p>
           </EmptyState>
         ) : (
           <div className="list">
@@ -283,7 +292,6 @@ export default function OverlaysPage() {
           }}
         />
       )}
-      <ErrorBox message={error} />
     </div>
   );
 }
@@ -518,92 +526,102 @@ function AddOverlayForm({
               </select>
             )}
           </Field>
-          <Field label="Version">
-            <select value={wmsVersion} onChange={(e) => setWmsVersion(e.target.value)}>
-              <option value="1.3.0">1.3.0</option>
-              <option value="1.1.1">1.1.1</option>
-            </select>
-          </Field>
-          <Field label="Image format">
-            <select value={wmsFormat} onChange={(e) => setWmsFormat(e.target.value)}>
-              <option value="image/png">PNG</option>
-              <option value="image/jpeg">JPEG</option>
-            </select>
-          </Field>
-          <Field label="Transparency">
-            <select
-              value={wmsTransparent ? 'yes' : 'no'}
-              onChange={(e) => setWmsTransparent(e.target.value === 'yes')}
-            >
-              <option value="yes">Transparent background</option>
-              <option value="no">Opaque background</option>
-            </select>
-          </Field>
+          <details className="advanced-options">
+            <summary>WMS options</summary>
+            <div className="grid-2" style={{ marginTop: 10 }}>
+              <Field label="Version">
+                <select value={wmsVersion} onChange={(e) => setWmsVersion(e.target.value)}>
+                  <option value="1.3.0">1.3.0</option>
+                  <option value="1.1.1">1.1.1</option>
+                </select>
+              </Field>
+              <Field label="Image format">
+                <select value={wmsFormat} onChange={(e) => setWmsFormat(e.target.value)}>
+                  <option value="image/png">PNG</option>
+                  <option value="image/jpeg">JPEG</option>
+                </select>
+              </Field>
+              <Field label="Transparency">
+                <select
+                  value={wmsTransparent ? 'yes' : 'no'}
+                  onChange={(e) => setWmsTransparent(e.target.value === 'yes')}
+                >
+                  <option value="yes">Transparent background</option>
+                  <option value="no">Opaque background</option>
+                </select>
+              </Field>
+            </div>
+          </details>
         </div>
       )}
 
-      {provider === 'vectortile' && (
-        <div className="grid-2">
-          <Field label="Source layer" hint="The vector_layers id inside the tiles.">
-            <input value={sourceLayer} onChange={(e) => setSourceLayer(e.target.value)} />
-          </Field>
-          <Field label="Colour">
-            <input type="color" value={vectorColor} onChange={(e) => setVectorColor(e.target.value)} />
-          </Field>
-        </div>
-      )}
-
-      {(provider === 'xyz' || provider === 'vectortile') && (
-        <div className="grid-2">
-          {provider === 'xyz' && (
-            <Field label="Tile size">
-              <select value={tileSize} onChange={(e) => setTileSize(Number(e.target.value))}>
-                <option value={256}>256 px</option>
-                <option value={512}>512 px</option>
-              </select>
-            </Field>
+      <details className="advanced-options">
+        <summary>Advanced options</summary>
+        <div className="stack" style={{ paddingTop: 10 }}>
+          {provider === 'vectortile' && (
+            <div className="grid-2">
+              <Field label="Source layer" hint="The vector_layers id inside the tiles.">
+                <input value={sourceLayer} onChange={(e) => setSourceLayer(e.target.value)} />
+              </Field>
+              <Field label="Colour">
+                <input type="color" value={vectorColor} onChange={(e) => setVectorColor(e.target.value)} />
+              </Field>
+            </div>
           )}
-          {provider === 'xyz' && (
-            <Field label="Scheme">
-              <select value={scheme} onChange={(e) => setScheme(e.target.value as 'xyz' | 'tms')}>
-                <option value="xyz">XYZ</option>
-                <option value="tms">TMS</option>
-              </select>
-            </Field>
+
+          {(provider === 'xyz' || provider === 'vectortile') && (
+            <div className="grid-2">
+              {provider === 'xyz' && (
+                <Field label="Tile size">
+                  <select value={tileSize} onChange={(e) => setTileSize(Number(e.target.value))}>
+                    <option value={256}>256 px</option>
+                    <option value={512}>512 px</option>
+                  </select>
+                </Field>
+              )}
+              {provider === 'xyz' && (
+                <Field label="Scheme">
+                  <select value={scheme} onChange={(e) => setScheme(e.target.value as 'xyz' | 'tms')}>
+                    <option value="xyz">XYZ</option>
+                    <option value="tms">TMS</option>
+                  </select>
+                </Field>
+              )}
+              <Field label="Minimum zoom">
+                <input
+                  type="number"
+                  min={0}
+                  max={22}
+                  value={minzoom}
+                  onChange={(e) => setMinzoom(Number(e.target.value))}
+                />
+              </Field>
+              <Field label="Maximum zoom">
+                <input
+                  type="number"
+                  min={0}
+                  max={22}
+                  value={maxzoom}
+                  onChange={(e) => setMaxzoom(Number(e.target.value))}
+                />
+              </Field>
+            </div>
           )}
-          <Field label="Minimum zoom">
-            <input
-              type="number"
-              min={0}
-              max={22}
-              value={minzoom}
-              onChange={(e) => setMinzoom(Number(e.target.value))}
-            />
-          </Field>
-          <Field label="Maximum zoom">
-            <input
-              type="number"
-              min={0}
-              max={22}
-              value={maxzoom}
-              onChange={(e) => setMaxzoom(Number(e.target.value))}
-            />
+
+          <div className="grid-2">
+            <Field label="Attribution">
+              <input value={attribution} onChange={(e) => setAttribution(e.target.value)} />
+            </Field>
+            <Field label="Licence">
+              <input value={licence} onChange={(e) => setLicence(e.target.value)} />
+            </Field>
+          </div>
+
+          <Field label="Bounds (optional)" hint="west,south,east,north in EPSG:4326">
+            <input value={boundsText} onChange={(e) => setBoundsText(e.target.value)} placeholder="-180,-85,180,85" />
           </Field>
         </div>
-      )}
-
-      <div className="grid-2">
-        <Field label="Attribution">
-          <input value={attribution} onChange={(e) => setAttribution(e.target.value)} />
-        </Field>
-        <Field label="Licence">
-          <input value={licence} onChange={(e) => setLicence(e.target.value)} />
-        </Field>
-      </div>
-
-      <Field label="Bounds (optional)" hint="west,south,east,north in EPSG:4326">
-        <input value={boundsText} onChange={(e) => setBoundsText(e.target.value)} placeholder="-180,-85,180,85" />
-      </Field>
+      </details>
 
       <ErrorBox message={error} />
       <div className="button-row end">
@@ -616,10 +634,18 @@ function AddOverlayForm({
 }
 
 function providerLabel(layer: Layer) {
-  const provider = layer.metadata?.provider;
-  if (provider) return String(provider);
-  if (layer.source_type === 'tessera') return 'tessera';
-  if (layer.metadata?.wms) return 'wms';
-  if (layer.metadata?.xyz) return 'xyz';
-  return 'raster';
+  const provider = String(layer.metadata?.provider ?? '');
+  if (provider === 'rainviewer') return 'RainViewer radar';
+  if (provider === 'open-meteo') return 'Open-Meteo';
+  if (provider === 'usgs-earthquakes') return 'USGS earthquakes';
+  if (provider === 'tilejson') return 'TileJSON';
+  if (provider === 'vectortile') return 'Vector tiles';
+  if (provider === 'xyz') return 'XYZ';
+  if (provider === 'wms') return 'WMS';
+  if (provider === 'cog') return 'GeoTIFF';
+  if (provider) return provider.charAt(0).toUpperCase() + provider.slice(1);
+  if (layer.source_type === 'tessera') return 'Tessera';
+  if (layer.metadata?.wms) return 'WMS';
+  if (layer.metadata?.xyz) return 'XYZ';
+  return 'Raster';
 }

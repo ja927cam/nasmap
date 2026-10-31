@@ -62,9 +62,10 @@ docker compose up -d --build
 Open <http://localhost>. The **first account you register becomes the
 administrator**. Then:
 
-1. Import `sample-data/cambridge-landmarks.geojson` from **Map → Add layer →
-   Upload file**.
-2. Draw a layer or connect a remote URL.
+1. Import `sample-data/cambridge-landmarks.geojson` from **Map → Add →
+   Import data → Upload file**.
+2. Draw a layer or connect a remote URL. The guidance bar under the map
+   toolbar always explains the next useful action.
 3. Open <http://localhost/docs> for the OpenAPI UI.
 
 Useful commands:
@@ -133,7 +134,7 @@ For production:
 - [docs/setup.md](docs/setup.md) — install, environment, production, backups.
 - [docs/architecture.md](docs/architecture.md) — design and trade-offs.
 - [docs/data-import.md](docs/data-import.md) — supported formats and URL sources.
-- [docs/overlays.md](docs/overlays.md) — generic XYZ, TileJSON and WMS overlays.
+- [docs/overlays.md](docs/overlays.md) — generic XYZ, TileJSON, WMS and vector-tile overlays.
 - [docs/live-data.md](docs/live-data.md) — live weather radar, weather points and earthquakes.
 - [docs/tessera.md](docs/tessera.md) — Tessera coverage, import and export.
 - [docs/osm.md](docs/osm.md) — basemaps, OSM PBF import, tiles and publishing.

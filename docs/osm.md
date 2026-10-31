@@ -73,7 +73,7 @@ omits text labels so it has no font dependency. Extend
 
 ## Editable OSM layers
 
-**Map → OSM data** imports a local, editable copy of OSM from Overpass. Search
+**Map → Add → Import OSM area** imports a local, editable copy of OSM from Overpass. Search
 for a place or drag a rectangle in the map picker, choose a category (buildings,
 landuse, roads, waterways, natural, amenities, leisure or administrative
 boundaries) and a layer name. The worker
