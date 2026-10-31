@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import type { ImportJob } from '../api/types';
-import { Modal, Progress } from './ui';
+import { Modal, Progress, formatJobStatus } from './ui';
 
 function jobTypeLabel(value: string) {
   if (value === 'upload') return 'File import';
@@ -83,10 +83,10 @@ export default function JobProgress({
             <div>
               <strong>{job.options?.name || job.job_type}</strong>
               <small className="muted">
-                {jobTypeLabel(job.job_type)} · {job.status}
+                {jobTypeLabel(job.job_type)} · {formatJobStatus(job.status)}
               </small>
             </div>
-            <span className={`badge badge-${job.status}`}>{job.status}</span>
+            <span className={`badge badge-${job.status}`}>{formatJobStatus(job.status)}</span>
           </div>
           <Progress value={job.progress} />
           <p className="muted">{job.message}</p>

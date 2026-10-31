@@ -6,7 +6,7 @@ import { usePublicConfig } from '../api/config';
 import type { ImportJob, Layer, Paged } from '../api/types';
 import BlankLayerDialog from '../components/BlankLayerDialog';
 import Icon from '../components/Icon';
-import { Badge, EmptyState, ErrorBox, Progress, Spinner, formatDate } from '../components/ui';
+import { Badge, EmptyState, ErrorBox, Progress, Spinner, formatDate, formatJobStatus } from '../components/ui';
 
 export default function DashboardPage() {
   const config = usePublicConfig();
@@ -76,6 +76,12 @@ export default function DashboardPage() {
         </Link>
       </section>
 
+      {layerTotal === 0 && (
+        <p className="start-note">
+          New to Strata? <Link to="/help">Read the two-minute guide</Link>.
+        </p>
+      )}
+
       <div className="glance">
         <span><strong>{layerTotal.toLocaleString()}</strong> layers visible to you</span>
         <span><strong>{jobTotal.toLocaleString()}</strong> imports all time</span>
@@ -139,7 +145,7 @@ export default function DashboardPage() {
                   <div className="grow">
                     <strong>{job.options?.name || job.job_type}</strong>
                     <small>
-                      {jobTypeLabel(job.job_type)} · {job.status} · {formatDate(job.created_at)}
+                      {jobTypeLabel(job.job_type)} · {formatJobStatus(job.status)} · {formatDate(job.created_at)}
                     </small>
                     {job.status === 'running' && job.message && (
                       <small className="job-message">{job.message}</small>

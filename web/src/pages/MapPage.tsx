@@ -269,7 +269,7 @@ export default function MapPage() {
 
   async function deleteFeature() {
     if (!selectedFeature) return;
-    if (!window.confirm('Delete this feature? History is retained in feature_versions.')) return;
+    if (!window.confirm('Delete this feature? It will be removed from the map.')) return;
     await api(`/features/${selectedFeature.id}`, { method: 'DELETE' });
     setSelectedFeature(null);
     flash('Feature deleted');
@@ -312,7 +312,7 @@ export default function MapPage() {
   }
 
   async function deleteLayer(layer: Layer) {
-    if (!window.confirm(`Soft-delete layer "${layer.name}"? The data remains in the database.`)) return;
+    if (!window.confirm(`Delete the layer "${layer.name}"? It will disappear from the map, but its data stays in the database.`)) return;
     try {
       await api(`/layers/${layer.id}`, { method: 'DELETE' });
       setLayerData((prev) => {

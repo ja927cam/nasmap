@@ -4,7 +4,7 @@ import { api } from '../api/client';
 import { useAuth } from '../api/auth';
 import type { ImportJob, Paged } from '../api/types';
 import JobProgress from '../components/JobProgress';
-import { Badge, EmptyState, Progress, Spinner, formatDate } from '../components/ui';
+import { Badge, EmptyState, Progress, Spinner, formatDate, formatJobStatus } from '../components/ui';
 
 const statuses = ['all', 'queued', 'running', 'succeeded', 'failed', 'cancelled'] as const;
 
@@ -96,7 +96,7 @@ export default function JobsPage() {
             className={status === item ? 'tab active' : 'tab'}
             onClick={() => setStatus(item)}
           >
-            {item === 'all' ? 'All' : item.charAt(0).toUpperCase() + item.slice(1)}
+            {item === 'all' ? 'All' : formatJobStatus(item)}
           </button>
         ))}
       </div>
@@ -144,7 +144,7 @@ export default function JobsPage() {
                           : 'info'
                   }
                 >
-                  {job.status}
+                  {formatJobStatus(job.status)}
                 </Badge>
                 {job.layer_id && (
                   <Link className="btn btn-ghost btn-xs" to={`/map?layer=${job.layer_id}`}>

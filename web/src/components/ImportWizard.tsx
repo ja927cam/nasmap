@@ -174,9 +174,9 @@ export default function ImportWizard({
                 {!appendTo && (
                   <Field label="Visibility">
                     <select value={visibility} onChange={(e) => setVisibility(e.target.value as typeof visibility)}>
-                      <option value="private">Private — only me</option>
-                      <option value="organisation">Internal — everyone here</option>
-                      <option value="public">Public — everyone here</option>
+                      <option value="private">Private</option>
+                      <option value="organisation">Internal</option>
+                      <option value="public">Public</option>
                     </select>
                   </Field>
                 )}

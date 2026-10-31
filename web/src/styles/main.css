@@ -3180,3 +3180,9 @@ kbd {
     background: rgba(17, 20, 23, 0.28);
   }
 }
+
+.start-note {
+  margin: -2px 0 10px;
+  color: var(--muted);
+  font-size: 11.5px;
+}

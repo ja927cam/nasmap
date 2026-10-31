@@ -109,6 +109,15 @@ export function Progress({ value }: { value: number }) {
   );
 }
 
+export function formatJobStatus(status: string) {
+  if (status === 'succeeded') return 'Completed';
+  if (status === 'running') return 'In progress';
+  if (status === 'queued') return 'Queued';
+  if (status === 'failed') return 'Failed';
+  if (status === 'cancelled') return 'Cancelled';
+  return status;
+}
+
 export function formatDate(value?: string | null) {
   if (!value) return '—';
   return new Date(value).toLocaleString(undefined, {
