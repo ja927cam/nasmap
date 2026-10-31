@@ -92,7 +92,8 @@ export default function LivePage() {
         </div>
         <p className="muted">
           RainViewer precipitation radar. The tiles follow the latest available frame; existing
-          radar layers update without re-importing.
+          radar layers update without re-importing. Close zooms are upscaled because RainViewer
+          only serves radar up to zoom 7.
         </p>
         <div className="button-row">
           <button

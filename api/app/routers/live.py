@@ -135,7 +135,11 @@ async def add_radar(
         {
             "provider": "rainviewer",
             "rainviewer": {"color": 4, "options": "1_1"},
-            "xyz": {"tile_size": 256, "minzoom": 0, "maxzoom": 12},
+            "xyz": {
+                "tile_size": 256,
+                "minzoom": 0,
+                "maxzoom": live.RAINVIEWER_MAX_ZOOM,
+            },
             "generated_at": datetime.now(UTC).isoformat(),
         },
         "RainViewer",

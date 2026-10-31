@@ -15,6 +15,7 @@ from . import remote
 logger = logging.getLogger("nasmap.live")
 
 _rain_cache: tuple[float, str, str] | None = None
+RAINVIEWER_MAX_ZOOM = 7
 _RAIN_TTL = 300
 
 

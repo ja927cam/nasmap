@@ -9,8 +9,12 @@ the provider; it is not streamed continuously.
 RainViewer. The tile proxy resolves the latest radar frame and caches it for five
 minutes. Radar layers update automatically without re-importing.
 
+RainViewer only serves radar tiles up to zoom 7. Strata caps the layer at zoom 7
+and lets MapLibre upscale that tile at closer zooms, so RainViewer's "zoom level
+not supported" placeholder never appears on the map.
+
 - Attribution: RainViewer
-- Max zoom: 12
+- Max zoom: 7 (upscaled above 7)
 - Config: `RAINVIEWER_ENABLED`, `RAINVIEWER_METADATA_URL`
 
 ## Weather points

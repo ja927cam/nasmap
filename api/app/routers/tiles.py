@@ -143,6 +143,8 @@ async def _remote_overlay_tile(layer, z: int, x: int, y: int) -> tuple[bytes, st
         raise HTTPException(status_code=422, detail="Overlay has no XYZ tile URL")
     minzoom = int(xyz.get("minzoom") or 0)
     maxzoom = int(xyz.get("maxzoom") or 22)
+    if rain:
+        maxzoom = min(maxzoom, live.RAINVIEWER_MAX_ZOOM)
     if z < minzoom or z > maxzoom:
         return raster.transparent_tile(), "image/png", "no-cache"
 

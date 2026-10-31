@@ -175,6 +175,7 @@ function vertexData(coords: LngLat[]) {
 }
 
 const emptyCollection = { type: 'FeatureCollection' as const, features: [] };
+const RAINVIEWER_MAX_ZOOM = 7;
 
 export default function MapView(props: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -368,6 +369,9 @@ export default function MapView(props: MapViewProps) {
         };
         if (xyz.minzoom !== undefined) rasterSource.minzoom = xyz.minzoom;
         if (xyz.maxzoom !== undefined) rasterSource.maxzoom = xyz.maxzoom;
+        if (meta.provider === 'rainviewer') {
+          rasterSource.maxzoom = Math.min(rasterSource.maxzoom ?? RAINVIEWER_MAX_ZOOM, RAINVIEWER_MAX_ZOOM);
+        }
         if (Array.isArray(bounds) && bounds.length === 4) rasterSource.bounds = bounds;
         map.addSource(sourceId, rasterSource);
         map.addLayer({
